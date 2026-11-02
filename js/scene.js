@@ -10,7 +10,7 @@ const WALL_H = 4.2;
 const BASE_H = 10.5; // building base under floor 1 (3 storeys)
 const BODY_Y = 1.4; // seated character height
 const SP = 4.2; // desk spacing
-const DEPTH = 12;
+const RP = 4.6; // desk row pitch
 const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 const mat = (c, o = {}) => new THREE.MeshStandardMaterial({ color: c, roughness: 0.65, metalness: 0, ...o });
@@ -26,6 +26,7 @@ const M = {
   green: mat('#8fd18b', { roughness: 0.7 }),
   green2: mat('#76c27a', { roughness: 0.7 }),
   pot: mat('#fdfdfd'),
+  facade: mat('#ffffff', { roughness: 0.9, emissive: '#ffffff', emissiveIntensity: 0.32 }),
 };
 
 function add(parent, geo, material, x = 0, y = 0, z = 0, cast = true, receive = true) {
@@ -137,7 +138,7 @@ function tv(p, y) {
   return g;
 }
 
-function letterTex(name, n) {
+function letterTex(name, sub) {
   return canvasTex(1024, 256, (c, w, h) => {
     c.clearRect(0, 0, w, h);
     c.fillStyle = '#26262b';
@@ -146,7 +147,7 @@ function letterTex(name, n) {
     while (c.measureText(name).width > w - 40 && size > 40) { size -= 6; c.font = `800 ${size}px Inter, system-ui, sans-serif`; }
     c.fillText(name, 10, 160);
     c.fillStyle = '#b4b4bb'; c.font = '600 40px Inter, system-ui, sans-serif';
-    c.fillText('Floor ' + n, 14, 225);
+    c.fillText(sub, 14, 225);
   });
 }
 
@@ -265,7 +266,7 @@ function desk(p, x, z, a) {
 
 /* white block with dark vertical window strips on all four faces; origin at the bottom */
 function facade(parent, W, D, h, storeys) {
-  box(parent, W, h, D, M.white, 0, h / 2, 0);
+  box(parent, W, h, D, M.facade, 0, h / 2, 0);
   const sh = h / storeys, stripH = storeys > 1 ? sh - 1.4 : h - 2;
   const n = Math.floor(W / 1.05), nd = Math.floor(D / 1.05);
   const inst = new THREE.InstancedMesh(new THREE.BoxGeometry(0.55, stripH, 0.06), M.win, (n + nd) * 2 * storeys);
@@ -325,7 +326,7 @@ export function createScene(container, hooks = {}) {
   const controls = new OrbitControls(camera, renderer.domElement);
   controls.enableDamping = true;
   controls.dampingFactor = 0.08;
-  controls.minZoom = 0.45;
+  controls.minZoom = 0.2;
   controls.maxZoom = 3.2;
   controls.minPolarAngle = 0.25;
   controls.maxPolar = 1.4;
@@ -337,14 +338,16 @@ export function createScene(container, hooks = {}) {
   camera.zoom = 0.95;
 
   const isMobile = () => container.clientWidth < 768;
-  let fitW = 0;
+  let fitW = 0, fitH = 0;
   function fitZoom(force) {
     const w = container.clientWidth || 1, h = container.clientHeight || 1;
-    if (!isMobile() || (!force && w === fitW)) return;
-    fitW = w;
+    if (!force && w === fitW && h === fitH) return;
+    fitW = w; fitH = h;
     const asp = w / h, hh = Math.max(11, 15 / asp);
-    const z = (0.9 * 2 * hh * asp) / ((W + DEPTH) * 0.707);
-    camera.zoom = THREE.MathUtils.clamp(z, controls.minZoom, controls.maxZoom);
+    const mob = isMobile();
+    const spanX = (W + D) * 0.707, spanY = (W + D) * 0.408 + 6;
+    const z = Math.min((mob ? 0.9 : 0.78) * 2 * hh * asp / spanX, (mob ? 0.7 : 0.8) * 2 * hh / spanY);
+    camera.zoom = THREE.MathUtils.clamp(z, controls.minZoom, mob ? controls.maxZoom : 1.25);
     camera.updateProjectionMatrix();
   }
 
@@ -357,7 +360,7 @@ export function createScene(container, hooks = {}) {
     camera.updateProjectionMatrix();
     fitZoom();
   }
-  let floorsData = [], agentsData = [], sig = '', W = 18;
+  let floorsData = [], agentsData = [], sig = '', W = 18, D = 12, cols = 2;
   let built = []; // per floor
   let baseGroup = null;
   let active = 0;
@@ -383,9 +386,9 @@ export function createScene(container, hooks = {}) {
     group.position.y = i * FH;
     scene.add(group);
     // slab + closed body
-    const slab = box(group, W, SLAB, DEPTH, M.white, 0, -SLAB / 2, 0);
+    const slab = box(group, W, SLAB, D, M.facade, 0, -SLAB / 2, 0);
     const body = new THREE.Group();
-    facade(body, W, DEPTH, FH - SLAB, 1);
+    facade(body, W, D, FH - SLAB, 1);
     group.add(body);
 
     // open floor
@@ -393,10 +396,10 @@ export function createScene(container, hooks = {}) {
     group.add(open);
     const sides = {};
     const defs = {
-      nz: { n: [0, -1], len: W, pos: [0, -DEPTH / 2], rot: 0 },
-      pz: { n: [0, 1], len: W, pos: [0, DEPTH / 2], rot: 0 },
-      nx: { n: [-1, 0], len: DEPTH, pos: [-W / 2, 0], rot: Math.PI / 2 },
-      px: { n: [1, 0], len: DEPTH, pos: [W / 2, 0], rot: Math.PI / 2 },
+      nz: { n: [0, -1], len: W, pos: [0, -D / 2], rot: 0 },
+      pz: { n: [0, 1], len: W, pos: [0, D / 2], rot: 0 },
+      nx: { n: [-1, 0], len: D, pos: [-W / 2, 0], rot: Math.PI / 2 },
+      px: { n: [1, 0], len: D, pos: [W / 2, 0], rot: Math.PI / 2 },
     };
     for (const [key, d] of Object.entries(defs)) {
       const wall = new THREE.Group();
@@ -411,8 +414,8 @@ export function createScene(container, hooks = {}) {
       sides[key] = { n: d.n, wall, rail };
     }
     // wall decor
-    const innerZ = -DEPTH / 2 + 0.3, innerX = -W / 2 + 0.3;
-    const letters = new THREE.Mesh(new THREE.PlaneGeometry(7, 1.75), new THREE.MeshBasicMaterial({ map: letterTex(floor.name, i + 1), transparent: true }));
+    const innerZ = -D / 2 + 0.3, innerX = -W / 2 + 0.3;
+    const letters = new THREE.Mesh(new THREE.PlaneGeometry(7, 1.75), new THREE.MeshBasicMaterial({ map: letterTex(floorsData.length === 1 ? 'Office Bot' : floor.name, floorsData.length === 1 ? floor.name : 'Floor ' + (i + 1)), transparent: true }));
     letters.position.set(W / 2 - 5, 2.9, innerZ + 0.02);
     sides.nz.wall.add(letters);
     const clk = clock(sides.nz.wall, -4, 2.9);
@@ -427,23 +430,21 @@ export function createScene(container, hooks = {}) {
     for (const [cx, c] of [[-6, '#f2994a'], [-5.6, '#4c8dff'], [-5.2, '#f2c94c']]) rbox(open, 0.22, 0.28, 0.22, 0.05, mat(c), cx, 1.12, innerZ + 0.6);
     box(open, 2.6, 0.06, 0.4, M.white, 1.6, 2.2, innerZ + 0.2);
     // plants, sofas
-    plant(open, -W / 2 + 1.1, -DEPTH / 2 + 1.5, 1.1);
-    plant(open, W / 2 - 1.2, -DEPTH / 2 + 1.4, 0.9);
-    plant(open, W / 2 - 1.2, DEPTH / 2 - 1.4, 1.0);
-    plant(open, -W / 2 + 1.1, DEPTH / 2 - 1.4, 0.8);
+    plant(open, -W / 2 + 1.1, -D / 2 + 1.5, 1.1);
+    plant(open, W / 2 - 1.2, -D / 2 + 1.4, 0.9);
+    plant(open, W / 2 - 1.2, D / 2 - 1.4, 1.0);
+    plant(open, -W / 2 + 1.1, D / 2 - 1.4, 0.8);
     sofa(open, W / 2 - 2.2, -0.5, Math.PI / 2 + Math.PI, 3.2);
     ottoman(open, W / 2 - 4.2, -1.6, 0.3);
     ottoman(open, W / 2 - 4.2, 0.8, -0.2);
     rbox(open, 1.2, 0.04, 1.2, 0.02, M.gray, W / 2 - 4.2, 0.62, -0.4).rotation.y = 0.3;
 
     // agents
-    const cols = Math.max(2, Math.ceil(list.length / 2));
-    const x0 = -((cols - 1) * SP) / 2 - 1.5;
     const objs = [];
     list.forEach((a, idx) => {
       const col = idx % cols, row = Math.floor(idx / cols);
-      const x = x0 + col * SP;
-      const dz = row ? 2.0 : -2.8;
+      const x = -W / 2 + 3.8 + col * SP;
+      const dz = -D / 2 + 4.0 + row * RP;
       const sm = desk(open, x, dz, a);
       const o = makeAgent(a, hooks);
       o.root.position.set(x, 0, dz + 1.25);
@@ -461,11 +462,17 @@ export function createScene(container, hooks = {}) {
     clearBuilt();
     const by = floorsData.map(() => []);
     for (const a of agentsData) by[a.floor]?.push(a);
-    const cols = Math.max(2, ...by.map((l) => Math.ceil(l.length / 2)));
-    W = Math.max(18, cols * SP + 7);
+    const n = Math.max(1, ...by.map((l) => l.length));
+    cols = Math.max(2, Math.min(8, Math.ceil(Math.sqrt(n * 1.4))));
+    const rows = Math.ceil(n / cols);
+    W = Math.max(18, cols * SP + 9);
+    D = Math.max(12, 8.1 + (rows - 1) * RP);
+    const half = Math.max(W, D) * 0.75 + 8;
+    sc.left = -half; sc.right = half; sc.top = half; sc.bottom = -half; sc.far = 220;
+    sc.updateProjectionMatrix();
     baseGroup = new THREE.Group();
     baseGroup.position.y = -SLAB - BASE_H;
-    facade(baseGroup, W, DEPTH, BASE_H, 3);
+    facade(baseGroup, W, D, BASE_H, 3);
     scene.add(baseGroup);
     floorsData.forEach((f, i) => buildFloor(i, f, by[i]));
     fitZoom(true);
@@ -612,7 +619,7 @@ export function createScene(container, hooks = {}) {
       if (p >= 1) tween = null;
     }
     controls.target.x = THREE.MathUtils.clamp(controls.target.x, -W, W);
-    controls.target.z = THREE.MathUtils.clamp(controls.target.z, -DEPTH, DEPTH);
+    controls.target.z = THREE.MathUtils.clamp(controls.target.z, -D, D);
     controls.autoRotate = tour;
     controls.autoRotateSpeed = 1.2;
     controls.update();

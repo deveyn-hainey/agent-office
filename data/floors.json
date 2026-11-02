@@ -1,4 +1,3 @@
 [
-  {"id": "grok-bot", "name": "Grok Bot"},
-  {"id": "claude", "name": "Claude"}
+  {"id": "main", "name": "Main"}
 ]

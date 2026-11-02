@@ -1,6 +1,6 @@
-# Grok Bot Office
+# Office Bot
 
-A static, live 3D dashboard showing Deveyn Hainey's AI agents as small characters working in a clean white isometric office building. Each floor is a group of agents; the active floor is shown open with its name on the back wall. Status bubbles, task speech bubbles, a floors list, activity feed and details cards sit on top.
+A static, live 3D dashboard showing Deveyn Hainey's AI agents as small characters working in a clean white isometric office building. By default all agents sit together on one shared **Main** floor; the floor is shown open with "Office Bot" on the back wall. Status bubbles, task speech bubbles, a floors list, activity feed and details cards sit on top.
 
 No build step. Everything is plain HTML/CSS/ES modules and works on GitHub Pages. **three.js is loaded from the jsDelivr CDN** (via an import map in `index.html`), so an internet connection is needed. If WebGL or the CDN fails, a fallback message appears and the side panels keep working.
 
@@ -20,7 +20,7 @@ python3 -m http.server 8000
 | Rotate | Drag (touch: one finger) |
 | Zoom | Scroll, `+` / `−` buttons (touch: pinch) |
 | Pan | Right-drag or `W` `A` `S` `D` (touch: two fingers) |
-| Switch floor | `↑` / `↓`, or click a floor in the Floors list |
+| Switch floor | `↑` / `↓`, or click a floor in the Floors list (only shown when there is more than one floor) |
 | Agent details | Click an agent or its bubble; `Esc` closes |
 | Tour | `▶ Tour` slowly orbits the camera (never auto-starts) |
 
@@ -47,14 +47,16 @@ Data is re-fetched every 60 seconds with cache busting. Times are shown in Ameri
 
 ## Data schemas
 
-**`data/floors.json`** — order is the floor number (first entry = floor 1, at the bottom).
+**`data/floors.json`** — order is the floor number (first entry = floor 1, at the bottom). The default is a single `Main` floor; the Floors card, floor hint and floor switching are hidden while there is only one floor. Add more entries to get a multi-floor building.
 ```json
-[{"id": "grok-bot", "name": "Grok Bot"}, {"id": "claude", "name": "Claude"}]
+[{"id": "main", "name": "Main"}]
 ```
 
-**`data/agents.json`** — `color` (hex) is optional, otherwise a color is derived from the id. `floor` is a floor id; unknown or missing floors fall back to the first floor. Character shape is chosen deterministically from the id.
+**Desks scale automatically.** Every agent in `agents.json` (any source) gets its own desk on its floor. As agents are added the floor grows with extra desk rows (and the building footprint grows with it), and the camera auto-fits so every desk is visible at once. All floors share the footprint of the busiest floor.
+
+**`data/agents.json`** — `color` (hex) is optional, otherwise a color is derived from the id. `floor` is a floor id (default `main`); unknown or missing floors fall back to the first floor. Character shape is chosen deterministically from the id.
 ```json
-[{"id": "elon", "name": "Elon", "source": "Grok Bot", "role": "Coding", "floor": "grok-bot", "color": "#4c8dff"}]
+[{"id": "elon", "name": "Elon", "source": "Grok Bot", "role": "Coding", "floor": "main", "color": "#4c8dff"}]
 ```
 
 **`data/status.json`** — states: `working`, `finished`, `needs-you`, `stuck`, `idle`. Agents with no entry show as idle. A status older than 2 hours shows a stale warning.

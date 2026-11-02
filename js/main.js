@@ -60,6 +60,8 @@ function renderCounts() {
   const t = $('toast');
   t.hidden = !w;
   document.body.classList.toggle('has-toast', !!w);
+  const nw = count('needs-you');
+  document.title = (nw ? `(${nw}) ` : '') + 'Office Bot';
   if (w) {
     const more = count('needs-you') - 1;
     t.innerHTML = `<span class="sq" style="background:${w.colorHex}"></span><div class="tt"><b>${esc(w.name)} needs you</b><small>${esc(truncate(w.task, 48) || 'Waiting on you')}${more ? ` · +${more} more` : ''}</small></div><button class="btn" data-view="${esc(w.id)}">View</button>`;
@@ -103,7 +105,7 @@ function renderRight() {
   const { list, active } = floorStats(S.active);
   $('bName').textContent = S.floors[S.active].name;
   $('bWorking').textContent = list.filter((a) => a.state === 'working').length;
-  $('bSub').textContent = `Floor ${S.active + 1} · ${list.length} bot${list.length === 1 ? '' : 's'}`;
+  $('bSub').textContent = `${S.floors.length > 1 ? `Floor ${S.active + 1} · ` : ''}${list.length} bot${list.length === 1 ? '' : 's'}`;
   $('agentList').innerHTML = list.length
     ? list.map((a) => agentRow(a, `${STATES[a.state].label}${a.task ? ' · ' + esc(truncate(a.task, 60)) : ''}`)).join('')
     : '<div class="empty">No agents on this floor</div>';
@@ -132,6 +134,9 @@ function renderUsage() {
 }
 
 function renderAll() {
+  const single = S.floors.length < 2;
+  document.body.classList.toggle('single-floor', single);
+  $('navLeft').textContent = single ? 'Status' : 'Floors';
   renderHeader(); renderCounts(); renderFloors(); renderLists(); renderRight(); renderActivity(); renderUsage();
   if (scene) scene.setData(S.floors, S.agents);
   if (openId) renderDetail();

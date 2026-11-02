@@ -29,12 +29,13 @@ small { color: #8a8a93; font-size: 11px; }
 .tour.on { background: #17171b; color: #fff; }
 
 /* top-center */
-#topcenter { position: fixed; top: 12px; left: 50%; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; gap: 8px; z-index: 4; }
+#topcenter { position: fixed; top: 12px; left: 50%; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; gap: 8px; z-index: 10; }
 .counts { display: flex; gap: 14px; padding: 8px 16px; white-space: nowrap; color: #55555d; }
 .counts span { display: inline-flex; align-items: center; }
 .counts b { color: #17171b; margin-right: 3px; }
 .toast { display: flex; align-items: center; gap: 10px; padding: 8px 8px 8px 10px; }
 .toast[hidden] { display: none; }
+.single-floor .floors, .single-floor #hintFloors { display: none; }
 .toast .sq { width: 26px; height: 26px; }
 .tt { display: flex; flex-direction: column; min-width: 130px; max-width: 260px; }
 .tt small { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
