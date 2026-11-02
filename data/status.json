@@ -1,13 +1,45 @@
 {
-  "updated": "2026-11-02T22:08:29Z",
+  "updated": "2026-11-02T22:48:58Z",
   "agents": {
-    "info": {"state": "idle", "task": "Waiting for first status update", "updated": "2026-11-02T22:08:29Z"},
-    "eio": {"state": "idle", "task": "Waiting for first status update", "updated": "2026-11-02T22:08:29Z"},
-    "elon": {"state": "idle", "task": "Waiting for first status update", "updated": "2026-11-02T22:08:29Z"},
-    "groko": {"state": "idle", "task": "Waiting for first status update", "updated": "2026-11-02T22:08:29Z"},
-    "mo": {"state": "idle", "task": "Waiting for first status update", "updated": "2026-11-02T22:08:29Z"},
-    "jo": {"state": "idle", "task": "Waiting for first status update", "updated": "2026-11-02T22:08:29Z"},
-    "po": {"state": "idle", "task": "Waiting for first status update", "updated": "2026-11-02T22:08:29Z"},
-    "claude": {"state": "idle", "task": "Waiting for first status update", "updated": "2026-11-02T22:08:29Z"}
+    "info": {
+      "state": "working",
+      "task": "Building and hosting Office Bot; refreshing dashboard data now",
+      "updated": "2026-11-02T22:48:58Z"
+    },
+    "eio": {
+      "state": "idle",
+      "task": "Quiet since Oct 29; last pushed odds-lab UI rebuild and collector fix",
+      "updated": "2026-11-02T22:48:58Z"
+    },
+    "elon": {
+      "state": "idle",
+      "task": "Quiet since Oct 26; last confirmed Themes repo is private",
+      "updated": "2026-11-02T22:48:58Z"
+    },
+    "groko": {
+      "state": "needs-you",
+      "task": "Waiting for your ZIP code and pup's birthday to quote Pumpkin vs Spot pet insurance",
+      "updated": "2026-11-02T22:48:58Z"
+    },
+    "mo": {
+      "state": "needs-you",
+      "task": "Soccer model test done; asking rented GPU or free Colab to try SoccerChat",
+      "updated": "2026-11-02T22:48:58Z"
+    },
+    "jo": {
+      "state": "finished",
+      "task": "Set up auto-deploy of coach-rules to both Hugging Face Spaces",
+      "updated": "2026-11-02T22:48:58Z"
+    },
+    "po": {
+      "state": "idle",
+      "task": "Quiet since Oct 27; last summarized DMontgomery40 hosting setup",
+      "updated": "2026-11-02T22:48:58Z"
+    },
+    "claude": {
+      "state": "finished",
+      "task": "Office Bot redesign and fixes done; last fixed the View button",
+      "updated": "2026-11-02T22:48:58Z"
+    }
   }
 }
