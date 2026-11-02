@@ -1,0 +1,10 @@
+[
+  {"id": "info", "name": "info", "source": "Grok Bot", "role": "General info & questions"},
+  {"id": "eio", "name": "Eio", "source": "Grok Bot", "role": "Assistant"},
+  {"id": "elon", "name": "Elon", "source": "Grok Bot", "role": "Personal work projects, coding"},
+  {"id": "groko", "name": "Groko", "source": "Grok Bot", "role": "Assistant"},
+  {"id": "mo", "name": "Mo", "source": "Grok Bot", "role": "Assistant"},
+  {"id": "jo", "name": "Jo", "source": "Grok Bot", "role": "Assistant"},
+  {"id": "po", "name": "Po", "source": "Grok Bot", "role": "Assistant"},
+  {"id": "claude", "name": "Claude", "source": "Claude", "role": "Claude Code coding agent", "color": "#d97757"}
+]

@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Agent Office</title>
+<meta name="description" content="Animated office dashboard showing what each agent is up to and who needs attention.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8F%A2%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<header class="topbar">
+  <div class="top-row">
+    <h1>Agent Office <small>Deveyn Hainey</small></h1>
+  </div>
+  <div class="attn-box" id="attnBox" aria-live="polite">
+    <span class="attn-count" id="attnCount">0</span>
+    <span class="attn-label" id="attnLabel">Nothing needs you right now</span>
+    <div class="attn-chips" id="attnChips"></div>
+  </div>
+  <div class="updated" id="updatedBox" aria-live="polite">
+    <span class="updated-label">Last updated:</span>
+    <strong id="updatedText">loading…</strong>
+    <span id="staleWarn" class="stale" hidden>⚠ Stale: data is over 2 hours old</span>
+    <span id="fetchWarn" class="stale" hidden>⚠ Couldn’t refresh status</span>
+  </div>
+  <div class="counts" id="counts">
+    <span class="chip-count c-working">Working <b id="n-working">0</b></span>
+    <span class="chip-count c-idle">Idle <b id="n-idle">0</b></span>
+    <span class="chip-count c-stuck">Stuck <b id="n-stuck">0</b></span>
+    <span class="chip-count c-needs-you">Needs you <b id="n-needs-you">0</b></span>
+    <span class="chip-count c-unknown" id="unkWrap" hidden>No data <b id="n-unknown">0</b></span>
+  </div>
+</header>
+
+<main>
+  <div class="office" id="office">
+    <div class="wall" aria-hidden="true">
+      <div class="coffee"><i class="steam"></i><i class="steam s2"></i><div class="cm-top"></div><div class="cm-body"><span></span></div></div>
+      <div class="window"></div>
+      <div class="window"></div>
+      <div class="window w3"></div>
+      <div class="window w4"></div>
+      <div class="plant"><i class="l1"></i><i class="l2"></i><i class="l3"></i><div class="pot"></div></div>
+    </div>
+    <div class="desks" id="desks"></div>
+    <div class="floor-deco" aria-hidden="true">
+      <div class="plant"><i class="l1"></i><i class="l2"></i><i class="l3"></i><div class="pot"></div></div>
+      <div class="rug"></div>
+      <div class="plant"><i class="l1"></i><i class="l2"></i><i class="l3"></i><div class="pot"></div></div>
+    </div>
+  </div>
+  <p class="empty" id="empty" hidden>No agents found in data/agents.json.</p>
+</main>
+
+<div class="backdrop" id="backdrop" hidden>
+  <div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="dName" tabindex="-1">
+    <button type="button" class="close" id="closeBtn" aria-label="Close details">✕</button>
+    <h2 id="dName"></h2>
+    <span class="state-pill" id="dState"></span>
+    <dl>
+      <dt>Source</dt><dd id="dSource"></dd>
+      <dt>Role</dt><dd id="dRole"></dd>
+      <dt>Task</dt><dd id="dTask"></dd>
+      <dt>Last updated</dt><dd id="dUpdated"></dd>
+    </dl>
+  </div>
+</div>
+<script src="js/app.js"></script>
+</body>
+</html>
