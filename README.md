@@ -1,76 +1,96 @@
-# Agent Office
+# Grok Bot Office
 
-An animated, top-down "agent office" dashboard for Deveyn Hainey. Each agent gets a desk with a little character; the desk animates according to the agent's state (typing, stuck alert, waving, idle/zzz). The goal is to see at a glance **when a bot is stuck or needs you**: the top bar shows a big attention count (red when above zero) with clickable chips naming each stuck / needs-you agent, and every desk shows its state, current task and how long ago it was updated.
+A static, live 3D dashboard showing Deveyn Hainey's AI agents as small characters working in a clean white isometric office building. Each floor is a group of agents; the active floor is shown open with its name on the back wall. Status bubbles, task speech bubbles, a floors list, activity feed and details cards sit on top.
 
-Plain HTML/CSS/JS: no build step, no backend, no CDNs, and all paths are relative, so it can be served from any folder (e.g. GitHub Pages project sites).
-
-> **Status:** GitHub Pages is **not enabled yet** and the repository is **private**. Nothing is published until you enable Pages in the repo settings.
-
-Data refreshes on a schedule, not live: the page re-fetches `data/status.json` every 60 s (cache-busted), shows "Last updated" in America/Denver time, and shows a "Stale" warning if the data is older than 2 hours.
+No build step. Everything is plain HTML/CSS/ES modules and works on GitHub Pages. **three.js is loaded from the jsDelivr CDN** (via an import map in `index.html`), so an internet connection is needed. If WebGL or the CDN fails, a fallback message appears and the side panels keep working.
 
 ## Run locally
 
-```bash
+```sh
 python3 -m http.server 8000
 # open http://localhost:8000
 ```
 
-(Opening `index.html` via `file://` won't work because the browser blocks `fetch` of local JSON.)
+(Opening `index.html` from `file://` won't work because the page fetches JSON and uses ES modules.)
+
+## Controls
+
+| Action | Input |
+| --- | --- |
+| Rotate | Drag (touch: one finger) |
+| Zoom | Scroll, `+` / `−` buttons (touch: pinch) |
+| Pan | Right-drag or `W` `A` `S` `D` (touch: two fingers) |
+| Switch floor | `↑` / `↓`, or click a floor in the Floors list |
+| Agent details | Click an agent or its bubble; `Esc` closes |
+| Tour | `▶ Tour` slowly orbits the camera (never auto-starts) |
+
+On screens under 768px the side panels become drawers (Floors / Agents / Activity). `prefers-reduced-motion` minimises bobbing and animations.
 
 ## File layout
 
 ```
-index.html
-css/style.css
-js/app.js
-data/agents.json          agent roster (edit to add agents)
-data/status.json          current status (written by a scheduled job or the helper script)
-scripts/update-status.py  helper to update status.json
+index.html            page + import map
+css/style.css         UI styles
+js/main.js            data loading, UI panels, events
+js/scene.js           three.js scene (building, floors, agents, camera)
+js/util.js            colors, states, Denver time helpers
+data/floors.json      floors (order = floor number)
+data/agents.json      agents
+data/status.json      live status
+data/activity.json    activity feed
+data/routines.json    optional, routines card
+data/usage.json       optional, usage card
+scripts/update-status.py   helper to update status/activity
 ```
 
-## JSON schemas
+Data is re-fetched every 60 seconds with cache busting. Times are shown in America/Denver.
 
-### `data/agents.json`
+## Data schemas
 
+**`data/floors.json`** — order is the floor number (first entry = floor 1, at the bottom).
 ```json
-[
-  {"id": "elon", "name": "Elon", "source": "Grok Bot", "role": "Personal work projects, coding", "color": "#6b7cff"}
-]
+[{"id": "grok-bot", "name": "Grok Bot"}, {"id": "claude", "name": "Claude"}]
 ```
 
-`id` (unique, used as the key in status), `name`, `source` (`"Grok Bot"` or `"Claude"`), `role`, optional `color` (any CSS color; otherwise derived from the id). **Adding an agent = adding an entry**; desks auto-layout. Agents that appear in status but not here are ignored; agents here but missing from status show as "No data".
-
-### `data/status.json`
-
+**`data/agents.json`** — `color` (hex) is optional, otherwise a color is derived from the id. `floor` is a floor id; unknown or missing floors fall back to the first floor. Character shape is chosen deterministically from the id.
 ```json
-{
-  "updated": "2026-11-02T22:08:29Z",
-  "agents": {
-    "elon": {"state": "working", "task": "one line", "updated": "2026-11-02T22:08:29Z"}
-  }
-}
+[{"id": "elon", "name": "Elon", "source": "Grok Bot", "role": "Coding", "floor": "grok-bot", "color": "#4c8dff"}]
 ```
 
-`state` is one of `working`, `idle`, `stuck`, `needs-you`. Timestamps are ISO 8601 (UTC recommended). `stuck` and `needs-you` count as "needs attention".
+**`data/status.json`** — states: `working`, `finished`, `needs-you`, `stuck`, `idle`. Agents with no entry show as idle. A status older than 2 hours shows a stale warning.
+```json
+{"updated": "2026-11-02T22:08:29Z",
+ "agents": {"elon": {"state": "working", "task": "Refactoring parser", "updated": "2026-11-02T22:08:29Z"}}}
+```
 
-## Updating status
+**`data/activity.json`** — newest first; the last 8 are shown.
+```json
+[{"time": "2026-11-02T22:10:00Z", "agent": "elon", "text": "Started refactoring parser"}]
+```
 
-`scripts/update-status.py` (Python 3 stdlib only) edits `data/status.json`:
+**`data/routines.json`** (optional; the card is hidden if the file is missing or empty)
+```json
+[{"name": "Morning digest", "schedule": "Daily 07:00", "agent": "info"}]
+```
 
-```bash
-# one or more agents (flags pair up in order)
-python3 scripts/update-status.py --id elon --state working --task "Refactoring parser"
-python3 scripts/update-status.py --id mo --state idle --task "Done" --id po --state stuck --task "Needs API key"
+**`data/usage.json`** (optional; the card only appears if the file exists) — a single object or an array of them.
+```json
+{"label": "Weekly limit", "percent": 31, "resets": "in 3d 14h",
+ "items": [{"name": "Elon", "percent": 5.7}, {"name": "Mo", "percent": 5.5}]}
+```
 
-# from a JSON file: {"agents": {id: {state, task}}}, {id: {state, task}}, or [{id, state, task}, ...]
+## Updating status and activity
+
+Use the helper (Python 3, stdlib only):
+
+```sh
+python3 scripts/update-status.py --id elon --state working --task "Refactoring parser" --activity "Started refactor"
+python3 scripts/update-status.py --log-activity --id mo --state finished --task "Report sent"
 python3 scripts/update-status.py --file updates.json
 ```
 
-Options: `--time ISO` (override timestamp), `--root DIR`. Agents you don't mention keep their previous entry; each updated agent gets the new timestamp, as does the top-level `updated`. Unknown ids produce a warning.
+- `--id/--state/--task` repeat and pair up; `--activity` repeats per `--id`; `--log-activity` logs each update's task text.
+- Invalid states are rejected; ids missing from `agents.json` produce a warning.
+- `activity.json` is capped at 200 entries, newest first.
 
-To keep the dashboard current, run it from a scheduled job (a Grok Bot routine, or a GitHub Action / cron) that then commits and pushes `data/status.json`:
-
-```bash
-python3 scripts/update-status.py --file updates.json
-git add data/status.json && git commit -m "status update" && git push
-```
+To automate, run a scheduled job (cron, GitHub Action, or an agent routine) that calls the script and then commits and pushes `data/*.json`; GitHub Pages redeploys and the dashboard picks it up within a minute.
