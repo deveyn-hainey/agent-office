@@ -149,15 +149,15 @@ function starPts(cx, cy, R) { const p = []; for (let i = 0; i <= 10; i++) { cons
 
 /* ---------------------------------------------------------------- frames */
 const SPEC = {
-  whiteboard: { bw: 0.12, color: '#e6c8da', depth: 0.16, back: '#ffffff' },
-  voteboard: { bw: 0.14, color: '#e6c8da', depth: 0.16, back: '#ffffff' },
-  jira: { bw: 0.08, color: '#e6c8da', depth: 0.14, back: '#f4f5f7' },
-  ciwall: { bw: 0.2, color: '#3b0a2e', depth: 0.22, back: '#16181d' },
-  xray: { bw: 0.16, color: '#3b0a2e', depth: 0.2, back: '#13161b' },
-  slack: { bw: 0.14, color: '#e6c8da', depth: 0.16, back: '#ffffff' },
+  whiteboard: { bw: 0.12, color: '#eceef1', depth: 0.16, back: '#ffffff' },
+  voteboard: { bw: 0.14, color: '#eceef1', depth: 0.16, back: '#ffffff' },
+  jira: { bw: 0.08, color: '#eceef1', depth: 0.14, back: '#f4f5f7' },
+  ciwall: { bw: 0.2, color: '#1b1c20', depth: 0.22, back: '#16181d' },
+  xray: { bw: 0.16, color: '#1b1c20', depth: 0.2, back: '#13161b' },
+  slack: { bw: 0.14, color: '#eceef1', depth: 0.16, back: '#ffffff' },
   mural: { bw: 0, color: '#ffffff', depth: 0.08, back: '#ffffff' },
-  confscreen: { bw: 0.14, color: '#3b0a2e', depth: 0.18, back: '#16181d' },
-  corkboard: { bw: 0.12, color: '#d9b1cb', depth: 0.14, back: '#eceef1' },
+  confscreen: { bw: 0.14, color: '#1b1c20', depth: 0.18, back: '#16181d' },
+  corkboard: { bw: 0.12, color: '#eceef1', depth: 0.14, back: '#eceef1' },
 };
 
 export function createSurfaces({ THREE, bus, clock, defs, floorGroups, lineMat, team, getState }) {
@@ -300,9 +300,20 @@ export function createSurfaces({ THREE, bus, clock, defs, floorGroups, lineMat, 
     if (!hasCols && !reqs.length && !steps.length && !cards.length && !notes.length) {
       font(c, 'italic', H * 0.055, HAND); c.fillStyle = '#b4b8c0';
       c.fillText('no requests yet', pad, H * 0.2);
-      // faint doodle: sticky outline
-      c.setLineDash([8, 8]); c.strokeStyle = '#dfe2e7'; c.lineWidth = 2;
-      c.strokeRect(pad, H * 0.32, W * 0.22, H * 0.4); c.setLineDash([]);
+      // sticky notes + marker scribbles
+      const notesC = ['#ffe27a', '#ff9fc0', '#8fc8ff', '#a6e3a1', '#ffe27a'], sw = W * 0.12;
+      notesC.forEach((nc, i) => {
+        const nx = pad + i * (sw + W * 0.03) + (i % 2) * 4, ny = H * (i % 2 ? 0.42 : 0.32);
+        c.save(); c.translate(nx + sw / 2, ny + sw / 2); c.rotate((i - 2) * 0.05);
+        c.fillStyle = 'rgba(0,0,0,.08)'; c.fillRect(-sw / 2 + 3, -sw / 2 + 4, sw, sw);
+        c.fillStyle = nc; c.fillRect(-sw / 2, -sw / 2, sw, sw);
+        c.strokeStyle = 'rgba(40,40,60,.45)'; c.lineWidth = 2.5;
+        for (let k = 0; k < 3; k++) { c.beginPath(); c.moveTo(-sw / 2 + 8, -sw / 2 + 14 + k * 11); c.lineTo(sw / 2 - 8 - (k * 7 % 14), -sw / 2 + 14 + k * 11); c.stroke(); }
+        c.restore();
+      });
+      c.lineWidth = 3; c.lineCap = 'round';
+      c.strokeStyle = '#e25a4f'; c.beginPath(); c.moveTo(pad, H * 0.8); c.bezierCurveTo(W * 0.15, H * 0.7, W * 0.25, H * 0.9, W * 0.4, H * 0.78); c.stroke();
+      c.strokeStyle = '#3fae5a'; c.beginPath(); c.arc(W * 0.55, H * 0.8, H * 0.05, 0, 7); c.stroke();
       return;
     }
     const top = H * 0.16, bottom = H - pad;
@@ -945,8 +956,8 @@ export function createSurfaces({ THREE, bus, clock, defs, floorGroups, lineMat, 
   // ---- MURAL
   DRAW.mural = (S, ) => {
     const c = S.ctx, W = S.W, H = S.H, st = S.state;
-    c.fillStyle = '#f7e9f2'; c.fillRect(0, 0, W, H);
-    c.setLineDash([3, 10]); c.lineCap = 'round'; c.strokeStyle = '#c98fb5'; c.lineWidth = 3;
+    c.fillStyle = '#ffffff'; c.fillRect(0, 0, W, H);
+    c.setLineDash([3, 10]); c.lineCap = 'round'; c.strokeStyle = '#dfe2e7'; c.lineWidth = 3;
     rrPath(c, 20, 20, W - 40, H - 40, 18); c.stroke(); c.setLineDash([]); c.lineCap = 'butt';
     const b = badgeOf(st);
     if (!b) {

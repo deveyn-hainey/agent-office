@@ -121,6 +121,26 @@ export function createTextures(THREE) {
     poster(4, '#f6f7f9', '#34c759', '#dfe3e8', '#ff6b6b', 'SHIP IT'),
   ];
 
+  /* ---------- framed abstract art: soft shapes ---------- */
+  function art(seed, bg, cols) {
+    const [c, g] = mk(180, 220);
+    const r = rng(seed);
+    g.fillStyle = bg; g.fillRect(0, 0, 180, 220);
+    cols.forEach((col, i) => {
+      g.fillStyle = col;
+      if (seed % 2) { g.beginPath(); g.arc(40 + r() * 100, 50 + i * 55, 22 + r() * 22, 0, 7); g.fill(); }
+      else { g.fillRect(14 + r() * 50, 20 + i * 62, 60 + r() * 90, 36 + r() * 16); }
+    });
+    g.strokeStyle = 'rgba(60,60,70,.35)'; g.lineWidth = 3; g.beginPath(); g.moveTo(20, 205); g.bezierCurveTo(60, 180, 120, 215, 160, 190); g.stroke();
+    return tex(c);
+  }
+  out.art = [
+    art(11, '#f4efe6', ['#9bb8d3', '#d9a07a', '#a9c4a0']),
+    art(12, '#eef3f6', ['#e8c27a', '#7fa6c9', '#c9d6b8']),
+    art(13, '#f7f1ea', ['#c9774f', '#a6c1a0', '#d8cfc0']),
+    art(14, '#edf1ee', ['#8fb2d6', '#e5b98a', '#9cb88f']),
+  ];
+
   /* ---------- mini whiteboard doodles (easel boards) ---------- */
   {
     const [c, g] = mk(256, 180);

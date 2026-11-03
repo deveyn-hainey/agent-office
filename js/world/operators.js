@@ -5,9 +5,9 @@
 //   world.operators.say(text, who?)                                                             -> short bubble ("Approved ✓")
 import { truncate, clamp } from '../core/util.js';
 
-const BERRY = '#870b64';
+const BLUE = '#3d7be0';
 const LOOKS = [
-  { torso: '#cdd1d8', legs: '#3b3e46', band: '#2b2e35', cup: BERRY },
+  { torso: '#cdd1d8', legs: '#3b3e46', band: '#2b2e35', cup: '#e8c9a0' },
   { torso: '#41454e', legs: '#c9cdd4', band: '#c9cdd4', cup: '#2b2e35' },
   { torso: '#dcdfe4', legs: '#555963', band: '#2b2e35', cup: '#8a8f99' },
 ];
@@ -42,7 +42,7 @@ export function createOperators({ ctx, T, floorGroups, group, floorY, setDeskScr
     const g = op.cv.getContext('2d'), W = 360, H = 228, on = op.typing > 0.5;
     g.fillStyle = on ? '#ffffff' : '#2b2e36'; g.fillRect(0, 0, W, H);
     if (on) {
-      g.fillStyle = BERRY; g.fillRect(0, 0, W, 34);
+      g.fillStyle = BLUE; g.fillRect(0, 0, W, 34);
       g.fillStyle = '#fff'; g.font = '700 20px Inter, system-ui, sans-serif'; g.textBaseline = 'middle'; g.fillText('New prompt', 14, 18);
       g.fillStyle = '#16171b'; g.font = '600 22px Inter, system-ui, sans-serif';
       const shown = op.text.slice(0, Math.floor(op.typed));
@@ -121,13 +121,13 @@ export function createOperators({ ctx, T, floorGroups, group, floorY, setDeskScr
   const pos = new Float32Array(N * 3);
   const geo = new T.BufferGeometry();
   geo.setAttribute('position', new T.BufferAttribute(pos, 3));
-  const dotMat = new T.PointsMaterial({ color: BERRY, size: 6, sizeAttenuation: false, map: dotTex, transparent: true, alphaTest: 0.2, depthTest: false, depthWrite: false });
+  const dotMat = new T.PointsMaterial({ color: BLUE, size: 6, sizeAttenuation: false, map: dotTex, transparent: true, alphaTest: 0.2, depthTest: false, depthWrite: false });
   const dots = new T.Points(geo, dotMat);
   dots.frustumCulled = false; dots.renderOrder = 999; dots.userData.noPick = true; dots.visible = false;
   const packet = new T.Group(); packet.visible = false; packet.userData.noPick = true;
   const plane = new T.Mesh(new T.ConeGeometry(0.2, 0.7, 3), new T.MeshBasicMaterial({ color: '#ffffff', depthTest: false, depthWrite: false }));
   plane.rotation.x = Math.PI / 2; plane.scale.set(1, 1, 0.35); plane.renderOrder = 1001;
-  const rim = new T.Mesh(new T.ConeGeometry(0.26, 0.8, 3), new T.MeshBasicMaterial({ color: BERRY, depthTest: false, depthWrite: false }));
+  const rim = new T.Mesh(new T.ConeGeometry(0.26, 0.8, 3), new T.MeshBasicMaterial({ color: BLUE, depthTest: false, depthWrite: false }));
   rim.rotation.x = Math.PI / 2; rim.scale.set(1, 1, 0.35); rim.renderOrder = 1000;
   packet.add(rim, plane);
   group.add(dots, packet);

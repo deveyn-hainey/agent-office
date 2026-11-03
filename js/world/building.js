@@ -2,7 +2,6 @@
 // glass conference rooms with sliding doors, dotted room annotations.
 import { shade, mix } from './batch.js';
 
-export const BERRY = '#870b64';
 const CAP = '#fafafb', WHITE = '#ffffff', WALL = '#dedfe3', STRIP = '#121316';
 export const BASE_H = 12;
 const SANS = 'Inter,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif';
@@ -78,7 +77,7 @@ export function buildShell(env) {
   /* ---------- back walls ---------- */
   const wt = 0.5;
   const backLen = xmax - xmin, leftLen = zmax - zmin;
-  const dado = shade(WALL, -0.05), tint = mix(BERRY, '#ffffff', 0.25);
+  const dado = shade(WALL, -0.05), tint = mix(accent, '#ffffff', 0.45);
   // back wall (z from -14.4 to -13.9)
   b.box(backLen, H, wt, WALL, (xmin + xmax) / 2, H / 2, zmin + wt / 2, 0, false);
   b.box(backLen - 0.02, 1.15, wt + 0.02, dado, (xmin + xmax) / 2, 0.575, zmin + wt / 2, 0, false);
@@ -121,7 +120,7 @@ export function buildShell(env) {
     const c = document.createElement('canvas'); c.width = 840; c.height = 160;
     const g = c.getContext('2d');
     g.fillStyle = '#ffffff'; rr(g, 4, 4, 832, 152, 40); g.fill();
-    g.fillStyle = BERRY; rr(g, 22, 22, 116, 116, 30); g.fill();
+    g.fillStyle = '#16171b'; rr(g, 22, 22, 116, 116, 30); g.fill();
     g.fillStyle = '#ffffff'; g.font = `700 74px ${SANS}`; g.textAlign = 'center'; g.textBaseline = 'middle';
     g.fillText(String(f.number), 80, 82);
     g.fillStyle = accent; g.beginPath(); g.arc(176, 80, 12, 0, 7); g.fill();
@@ -145,7 +144,7 @@ export function buildGlass(env) {
   if (!walls.length) return;
   const glassB = new env.Batch(T);   // pane geometry (no outlines)
   const H0 = data.wallHeight;
-  const frame = mix(BERRY, '#ffffff', 0.78);
+  const frame = '#eef0f3';
   const doors = [];
   for (const w of walls) {
     const H = w.h || H0;   // low partitions (Operator Room) set their own height
