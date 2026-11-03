@@ -461,3 +461,21 @@ body.live-mode .live-pill { display: inline-flex; align-items: center; gap: 6px;
 .live-pill.stale i { background: #a7acb4; animation: none; }
 @keyframes livepulse { 0% { box-shadow: 0 0 0 0 rgba(229,57,53,.6); } 70% { box-shadow: 0 0 0 8px rgba(229,57,53,0); } 100% { box-shadow: 0 0 0 0 rgba(229,57,53,0); } }
 body.live-mode #replay-controls { display: none !important; }
+
+/* ---------------------------------------------------------------- live: channel filter (main control) */
+.chan-picker { display: none; }
+body.live-mode .chan-picker { display: flex; align-items: center; gap: 8px; position: absolute; top: 54px; left: var(--L); right: var(--R); margin-inline: auto; width: fit-content; max-width: calc(100vw - var(--L) - var(--R) - 12px); z-index: 8; padding: 5px 6px 5px 5px; border-radius: 20px; background: #fff; box-shadow: var(--shadow); flex-wrap: wrap; justify-content: center; }
+body.live-mode .chan-picker .live-pill { position: static; transform: none; box-shadow: none; background: #f4f5f7; padding: 5px 10px; flex: none; }
+.chan-picker .chips { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; justify-content: center; }
+body.slack-open.live-mode .chan-picker .live-pill small { display: none; }
+.chan-picker .lbl { font: 700 10px var(--sans); text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 0 4px 0 2px; }
+.chan-picker .chip { display: inline-flex; align-items: center; gap: 6px; border: 0; background: transparent; padding: 7px 12px; border-radius: 999px; font: 600 13px var(--sans); color: #333; cursor: pointer; white-space: nowrap; }
+.chan-picker .chip:hover { background: #f1f2f5; }
+.chan-picker .chip.on { background: #111114; color: #fff; }
+.chan-picker .chip i { width: 7px; height: 7px; border-radius: 50%; opacity: .7; }
+.chan-picker .chip em { font-style: normal; font-size: 11px; font-weight: 600; opacity: .55; }
+body.live-mode #needs-card { top: 104px; }
+body.live-mode.slack-open #needs-card { top: 140px; }
+body.live-mode #toast { top: 160px; }
+body.chan-filtered #boards-card .brow.dim { opacity: .38; filter: grayscale(1); }
+@media (max-width: 900px) { body.live-mode .chan-picker { top: 52px; left: 8px; right: 8px; max-width: none; width: auto; } }

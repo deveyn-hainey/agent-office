@@ -50,8 +50,8 @@ export function createFeeds(ctx, store) {
       { who: 'Grok', text: 'Device matrix pass on the small iPhone: all good.', ts: day + 11e3 * 60, react: [['👍', 2]] },
     ],
   });
-  let chans, active = 'build-room', unread = {};
-  const reset = () => { chans = seeds(); unread = {}; active = 'build-room'; };
+  let chans, active = 'build-room', unread = {}, only = null; // only: channel filter (live) -> just that tab
+  const reset = () => { chans = seeds(); unread = {}; active = only || 'build-room'; };
   reset();
 
   pane.innerHTML = `<header class="s-head"><div><h3>Team chat</h3><span class="ro"><i></i>${LIVE() ? 'LIVE · read-only mirror' : 'Scenario replay · read-only'}</span></div><button class="x" data-s="close" aria-label="Close chat">✕</button></header>
@@ -64,7 +64,7 @@ export function createFeeds(ctx, store) {
     return !c || c === 'pitchside' ? 'build-room' : c;
   };
   function renderTabs() {
-    const names = [...new Set([...(LIVE() ? LIVE_CHANNELS : DEMO_CHANNELS), ...Object.keys(chans)])];
+    const names = only ? [only] : [...new Set([...(LIVE() ? LIVE_CHANNELS : DEMO_CHANNELS), ...Object.keys(chans)])];
     tabsEl.innerHTML = names.map((n) => `<button role="tab" class="tab${n === active ? ' on' : ''}" data-chan="${esc(n)}"># ${esc(n)}${unread[n] ? `<em>${unread[n]}</em>` : ''}</button>`).join('');
   }
   function msgNode(m, fresh) {
@@ -117,6 +117,7 @@ export function createFeeds(ctx, store) {
   // decisions get a system line in #decisions
   bus.on('vote:locked', (v) => bus.emit('slack:message', { channel: '#decisions', who: 'Decision log', text: `${v.proposal} locked — ${v.text || ''}`, ts: clock.simDate().getTime() }));
   bus.on('replay:reset', () => { reset(); render(); });
+  bus.on('channel:filter', ({ channel }) => { only = channel && channel !== 'all' ? normChan(channel) : null; active = only || 'build-room'; if (only) unread[only] = 0; render(); });
 
   pane.addEventListener('click', (e) => {
     const t = e.target.closest('[data-chan]');

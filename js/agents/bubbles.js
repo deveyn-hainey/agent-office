@@ -16,6 +16,7 @@ const CSS = `
 .s2-bub{position:relative;background:#fff;border-radius:13px;padding:5px 12px 6px;font:500 13px/1.32 Inter,-apple-system,"Segoe UI",system-ui,sans-serif;color:#15171c;width:max-content;max-width:min(60ch,260px);white-space:pre-wrap;text-align:left;box-shadow:0 2px 12px rgba(0,0,0,.15),0 0 0 1px rgba(0,0,0,.03);animation:s2pop .18s ease-out;margin-bottom:9px}
 .s2-bub:after{content:"";position:absolute;left:50%;top:100%;width:1px;height:9px;background:rgba(0,0,0,.28)}
 .s2-bub .h{visibility:hidden}
+.s2-dim{opacity:.22;filter:grayscale(1);transition:opacity .3s}.s2-dim .s2-bub{display:none}
 .s2-bub .who{display:block;font-weight:700;font-size:10px;letter-spacing:.02em;margin-bottom:1px;opacity:.6}
 .s2-bub.think{padding:7px 12px;display:flex;gap:4px;align-items:center}
 .s2-bub.think i{width:6px;height:6px;border-radius:50%;background:#15171c;display:block;animation:s2dot 1.1s infinite ease-in-out}
@@ -97,6 +98,7 @@ export function createBubbles(ctx) {
       badge.style.display = c.alertEl ? 'none' : '';
     };
     c.setVisible = (v) => { c.hidden = !v; label.visible = v; };
+    c.setDim = (v) => { outer.classList.toggle('s2-dim', !!v); };
     c.setTagVisible = (v) => { stack.dataset.tag = v ? '1' : '0'; };
 
     function clearSpeech() {

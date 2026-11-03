@@ -96,6 +96,7 @@ export function createBoards(ctx, store) {
   });
   const clearAll = () => { meta.clear(); paintDots(); renderList(); if (openId) renderBox(); };
   bus.on('replay:reset', clearAll);
+  bus.on('channel:filter', () => { renderList(); if (openId) renderBox(); });
 
   /* ------------------------------------------------------------ camera */
   function fly(id) {
@@ -219,7 +220,8 @@ export function createBoards(ctx, store) {
     const rows = list.map((id) => {
       const m = meta.get(id) || {};
       const fresh = m.updated && now - m.updated < FRESH_MS;
-      return `<button class="brow${openId === id ? ' on' : ''}${fresh ? ' fresh' : ''}" data-board="${esc(id)}"><span class="fnum">${floorOf(id) + 1}</span><span class="bmid"><b>${esc(label(id))}</b><small>${m.updated ? ago(m.updated) : '—'}</small></span>${m.unread ? `<em class="bunread">${m.unread}</em>` : ''}</button>`;
+      const dim = document.body.classList.contains('chan-filtered') && !m.updated; // nothing from the picked channel
+      return `<button class="brow${openId === id ? ' on' : ''}${fresh ? ' fresh' : ''}${dim ? ' dim' : ''}" data-board="${esc(id)}"><span class="fnum">${floorOf(id) + 1}</span><span class="bmid"><b>${esc(label(id))}</b><small>${m.updated ? ago(m.updated) : '—'}</small></span>${m.unread ? `<em class="bunread">${m.unread}</em>` : ''}</button>`;
     }).join('');
     const html = `<button class="coll-h" data-btoggle="1"><span class="t">Boards</span>${unreadTotal ? `<em class="count warn">${unreadTotal}</em>` : `<em class="count">${list.length}</em>`}</button>
       <div class="coll-b"${listOpen ? '' : ' hidden'}><label class="routine"><span><b>Follow updates</b><small>Fly to a board when it changes</small></span><input type="checkbox" class="sw" data-follow ${follow ? 'checked' : ''}><i class="swi"></i></label><div class="blist">${rows}</div></div>`;

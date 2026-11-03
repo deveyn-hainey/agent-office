@@ -581,7 +581,8 @@ export function createAgents(ctx) {
 
     // fade (elevator) + pop-in
     if (snap) a.fade = a.fadeT; else a.fade += (a.fadeT - a.fade) * (1 - Math.exp(-7 * dt));
-    if (Math.abs(a.fade - a.rig._fade) > 0.01) { a.rig.setFade(a.fade); a.rig._fade = a.fade; }
+    const fx = a.dim ? Math.min(a.fade, 0.16) : a.fade; // channel filter: bots outside the picked channel are greyed out
+    if (Math.abs(fx - a.rig._fade) > 0.01) { a.rig.setFade(fx); a.rig._fade = fx; }
     if (a.popT < 1) a.popT = Math.min(1, a.popT + dt / 0.45);
     const pop = a.popT < 1 ? 1 + 0.18 * Math.sin(a.popT * PI) - (1 - a.popT) * (1 - a.popT) * 0.9 : 1;
     a.rig.inner.scale.setScalar(SCALE * clamp(pop, 0.05, 1.3));
@@ -785,6 +786,12 @@ export function createAgents(ctx) {
     getWorldPosition(id) { const a = agents.get(id); return a ? new THREE.Vector3(a.x, a.y + 0.95, a.z) : null; },
     getFloor: (id) => agents.get(id)?.floor ?? 0,
     pickables: () => all().filter((a) => a.root.visible).map((a) => a.root),
+    /** channel filter: grey out every bot not in `keep` (a Set of ids); null = nobody dimmed */
+    setDimmed(keep) {
+      for (const a of agents.values()) { a.dim = !!keep && !keep.has(a.id); a.ctl.setDim?.(a.dim); if (a.dim) a.ctl.clearSpeech?.(); }
+      bus.emit('agents:dimmed', { keep: keep ? [...keep] : null });
+    },
+    isDimmed: (id) => !!agents.get(id)?.dim,
     reset() {
       reserved.clear();
       for (const a of agents.values()) {

@@ -7,7 +7,7 @@
 //   'feed'     -> chat pane line { channel, who, text }
 //   'operator' -> a human in the Operator Room { who, text, slot?, target? }
 //   everything else goes straight to director.ingest(): say, status, move, board, jira, ci, screen, finding, ask, toast, cheer, …
-import { truncate } from '../../core/util.js';
+import { truncate, esc } from '../../core/util.js';
 
 const POLL_MS = 30e3;
 const STATE_TYPES = new Set(['jira', 'ci', 'board', 'screen', 'finding', 'binder', 'xray', 'surface', 'status']);
@@ -21,6 +21,10 @@ export function createAdapter(ctx, opts = {}) {
   const seen = new Set();
   const queue = [];
   let since = '', timer = 0, playing = false, first = true, fails = 0, updated = 0, stopped = false;
+  const all = []; // every event received (sorted by id): the channel filter replays a subset of these
+  const LS_CHAN = 'office.liveChannel';
+  let channel = localStorage.getItem(LS_CHAN) || 'all';
+  const inChan = (e) => channel === 'all' || (e.channel || '#build-room') === channel;
   const releaseTimers = new Map();
 
   /* ---------------------------------------------------------------- pill */
@@ -73,27 +77,89 @@ export function createAdapter(ctx, opts = {}) {
     setTimeout(() => { playing = false; pump(); }, gap);
   }
 
+  // restore a set of events: board state instantly, recent chat into the pane, animate only the tail
+  function restore(list) {
+    const tail = list.slice(-BACKFILL_ANIMATE * 3).filter((e) => !CHAT_TYPES.has(e.type) || e.type === 'operator').slice(-BACKFILL_ANIMATE);
+    const tailSet = new Set(tail);
+    bus.emit('boards:quiet', { on: true });
+    for (const e of list) if (STATE_TYPES.has(e.type) && !tailSet.has(e)) { bus.emit('boards:clock', { ts: e.ts }); apply(e, { animate: false }); }
+    for (const e of list.filter((x) => CHAT_TYPES.has(x.type)).slice(-BACKFILL_CHAT)) { bus.emit('boards:clock', { ts: e.ts }); chat(e); }
+    bus.emit('boards:quiet', { on: false });
+    // operator lines from the tail are already in the pane: only animate the figure
+    for (const e of tail) queue.push(e.type === 'operator' ? { ...e, type: 'operatorAnim' } : e);
+  }
+  // bots that show up in a channel's events (speakers, owners, review presenters, cheer groups)
+  const agentsOf = (list) => {
+    const out = new Set();
+    for (const e of list) { for (const k of ['agent', 'owner', 'target']) if (typeof e[k] === 'string') out.add(e[k]); if (Array.isArray(e.agents)) e.agents.forEach((a) => out.add(a)); }
+    return out;
+  };
+
   function take(events) {
     const fresh = events.filter((e) => e && e.id != null && !seen.has(String(e.id))).sort((a, b) => (String(a.id) < String(b.id) ? -1 : 1));
     for (const e of fresh) seen.add(String(e.id));
     if (fresh.length) since = String(fresh[fresh.length - 1].id);
     if (!fresh.length) return;
+    all.push(...fresh);
     if (first) {
       first = false;
-      // backfill: restore board state instantly, drop recent chat into the pane, animate only the tail
-      const tail = fresh.slice(-BACKFILL_ANIMATE * 3).filter((e) => !CHAT_TYPES.has(e.type) || e.type === 'operator').slice(-BACKFILL_ANIMATE);
-      const tailSet = new Set(tail);
-      bus.emit('boards:quiet', { on: true });
-      for (const e of fresh) if (STATE_TYPES.has(e.type) && !tailSet.has(e)) { bus.emit('boards:clock', { ts: e.ts }); apply(e, { animate: false }); }
-      for (const e of fresh.filter((x) => CHAT_TYPES.has(x.type)).slice(-BACKFILL_CHAT)) { bus.emit('boards:clock', { ts: e.ts }); chat(e); }
-      bus.emit('boards:quiet', { on: false });
-      // operator lines from the tail are already in the pane: only animate the figure
-      for (const e of tail) queue.push(e.type === 'operator' ? { ...e, type: 'operatorAnim' } : e);
+      picker.render();
+      if (channel !== 'all' && !all.some((e) => e.channel === channel)) channel = 'all';
+      if (channel !== 'all') return setChannel(channel, { force: true });
+      restore(fresh);
     } else {
-      queue.push(...fresh);
+      queue.push(...fresh.filter(inChan));
+      picker.render();
     }
     pump();
   }
+
+  /* ---------------------------------------------------------------- channel filter */
+  const dimCss = document.createElement('style'); document.head.append(dimCss);
+  function setChannel(c, { force = false } = {}) {
+    c = c || 'all';
+    if (c === channel && !force) return;
+    channel = c; localStorage.setItem(LS_CHAN, c);
+    queue.length = 0;
+    for (const t of releaseTimers.values()) clearTimeout(t); releaseTimers.clear();
+    // clean office (boards, chat, asks, bots home), then replay only this channel's events
+    try { D()?.freePlay?.(); D()?.setAmbient?.(true); } catch { /* optional */ }
+    const list = all.filter(inChan);
+    const keep = c === 'all' ? null : agentsOf(list);
+    ctx.agents?.setDimmed?.(keep);
+    // grey the roster rows of bots outside the channel too
+    dimCss.textContent = keep ? `body.chan-filtered .bot[data-agent]${[...keep].map((a) => `:not([data-agent="${CSS.escape(a)}"])`).join('')}{opacity:.32;filter:grayscale(1)}` : '';
+    document.body.classList.toggle('chan-filtered', c !== 'all');
+    bus.emit('channel:filter', { channel: c, agents: keep ? [...keep] : null });
+    restore(list);
+    picker.render();
+    bus.emit('toast', { text: c === 'all' ? 'Showing all channels' : `Showing only ${c}`, kind: 'info' });
+    pump();
+  }
+
+  /* ---------------------------------------------------------------- picker UI (the main live control) */
+  const COLORS = ['#3d7be0', '#23803f', '#a86a00', '#870b64', '#5b4fd6', '#c62828'];
+  const picker = (() => {
+    const el = document.createElement('nav');
+    el.className = 'chan-picker'; el.setAttribute('aria-label', 'Filter the office by channel');
+    (document.getElementById('ui-root') || document.body).append(el);
+    const chipsEl = document.createElement('span'); chipsEl.className = 'chips';
+    el.append(pill, chipsEl); // the LIVE pill rides at the left of the picker
+    el.addEventListener('click', (ev) => { const b = ev.target.closest('[data-chan]'); if (b) setChannel(b.dataset.chan); });
+    let sig = '';
+    return {
+      render() {
+        const counts = new Map();
+        for (const e of all) if (CHAT_TYPES.has(e.type)) { const c = e.channel || '#build-room'; counts.set(c, (counts.get(c) || 0) + 1); }
+        const chans = [...counts.keys()].sort((a, b) => (a === '#build-room' ? -1 : b === '#build-room' ? 1 : counts.get(b) - counts.get(a)));
+        const total = [...counts.values()].reduce((n, v) => n + v, 0);
+        const btn = (id, label, n, color) => `<button class="chip${channel === id ? ' on' : ''}" data-chan="${esc(id)}" aria-pressed="${channel === id}">${color ? `<i style="background:${color}"></i>` : ''}${esc(label)}<em>${n}</em></button>`;
+        const html = `<span class="lbl">Channel</span>${btn('all', 'All', total)}${chans.map((c, i) => btn(c, c, counts.get(c), COLORS[i % COLORS.length])).join('')}`;
+        if (html !== sig) { sig = html; chipsEl.innerHTML = html; }
+      },
+    };
+  })();
+
   async function poll() {
     if (stopped) return;
     try {
@@ -131,5 +197,7 @@ export function createAdapter(ctx, opts = {}) {
     stop() { stopped = true; clearTimeout(timer); },
     get queued() { return queue.length; },
     get since() { return since; },
+    get channel() { return channel; },
+    setChannel,
   };
 }
