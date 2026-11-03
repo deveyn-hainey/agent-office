@@ -1,5 +1,5 @@
 {
-  "updated": "2026-11-03T15:30:54Z",
+  "updated": "2026-11-03T16:04:35Z",
   "agents": {
     "info": {
       "state": "finished",
@@ -27,9 +27,9 @@
       "updated": "2026-11-02T22:48:58Z"
     },
     "jo": {
-      "state": "finished",
-      "task": "Set up auto-deploy of coach-rules to both Hugging Face Spaces",
-      "updated": "2026-11-02T22:48:58Z"
+      "state": "working",
+      "task": "Checking why the rondo Space is still stuck on its loading screen",
+      "updated": "2026-11-03T16:04:35Z"
     },
     "po": {
       "state": "idle",
@@ -38,8 +38,13 @@
     },
     "claude": {
       "state": "working",
-      "task": "Building the Agent Office v2 foundation (architecture doc, world layout); also finished HF Space download and startup-timeout fixes for rondo",
-      "updated": "2026-11-03T15:30:54Z"
+      "task": "Final integration and polish of Agent Office v2 on the office-v2-floors branch",
+      "updated": "2026-11-03T16:04:35Z"
+    },
+    "boo": {
+      "state": "working",
+      "task": "Overseeing Claude's Agent Office v2 build; five commits in, on final polish",
+      "updated": "2026-11-03T16:04:35Z"
     }
   }
 }

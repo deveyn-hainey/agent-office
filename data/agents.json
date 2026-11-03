@@ -6,5 +6,6 @@
   {"id": "mo", "name": "Mo", "source": "Grok Bot", "role": "Assistant", "floor": "main"},
   {"id": "jo", "name": "Jo", "source": "Grok Bot", "role": "Assistant", "floor": "main"},
   {"id": "po", "name": "Po", "source": "Grok Bot", "role": "Assistant", "floor": "main"},
+  {"id": "boo", "name": "Boo", "source": "Grok Bot", "role": "Assistant", "floor": "main"},
   {"id": "claude", "name": "Claude", "source": "Claude", "role": "Claude Code coding agent", "color": "#d97757", "floor": "main"}
 ]
