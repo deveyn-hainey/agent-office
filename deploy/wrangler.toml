@@ -1,0 +1,5 @@
+# Optional wrangler deploy (run `node deploy/build.mjs` first). Password: `wrangler secret put SITE_PASSWORD`.
+name = "agent-office"
+main = "src/worker.js"
+compatibility_date = "2026-10-01"
+routes = [{ pattern = "office.devhain.com", custom_domain = true }]
