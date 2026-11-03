@@ -219,7 +219,7 @@ export function createElevator(env) {
       return new Promise((res) => {
         S.moving = true;
         const y0 = S.carY;
-        const dur = Math.max(0.6, (Math.abs(y1 - y0) / data.elevator.speed) * 1.12);
+        const dur = Math.max(0.6, (Math.abs(y1 - y0) / (data.elevator.speed * 1.3)) * 1.12);
         S.moveTo = { y0, y1, t: 0, dur, res, floor };
       });
     },
@@ -248,7 +248,7 @@ export function createElevator(env) {
     for (let i = 0; i < S.doorsAmt.length; i++) {
       const tg = S.doorsTarget[i], a = S.doorsAmt[i];
       if (a !== tg) {
-        const na = a + Math.sign(tg - a) * Math.min(Math.abs(tg - a), dt / 0.7);
+        const na = a + Math.sign(tg - a) * Math.min(Math.abs(tg - a), dt / 0.55);
         S.doorsAmt[i] = na; changed = true;
       }
     }

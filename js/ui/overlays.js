@@ -107,6 +107,7 @@ export function createOverlays(ctx, store) {
   function closeBinder() { binderId = null; bm.hidden = true; }
   bm.addEventListener('click', (e) => { if (e.target === bm || e.target.closest('[data-b=close]')) closeBinder(); });
   store.subscribe(() => { if (binderId) renderBinder(); });
+  ctx.bus.on('binder:update', () => { if (binderId) renderBinder(); });
 
   // ------------------------------------------------------------------ project map
   const pm = $('project-map');

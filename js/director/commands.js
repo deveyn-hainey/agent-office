@@ -47,6 +47,7 @@ export function createCommands(ctx, rt, actions, hooks) {
     actors = actors.filter((id) => rt.team.has(id));
     const needsActor = ['go', 'nap', 'coffee', 'cheer'].includes(p.intent);
 
+    rt.camera({ type: 'floor', floor: 3 }); // the request lands on the 4F whiteboard
     onBoardFloor.concat(actors.filter((a) => rt.visible(a))).forEach((id) => rt.look(id, 'surface:board-4f'));
     rt.say('lead', '', { style: 'think', ms: 1600, log: false });
 
@@ -105,6 +106,19 @@ export function createCommands(ctx, rt, actions, hooks) {
     await rt.sleep(1.0, tk);
     if (tk.cancelled) return;
     claim(actors);
+    // directed camera: show the whole building while they travel, then settle on the floor where the action is
+    const where = { go: rt.floorOf(p.place?.spec), huddle: 3, nap: 0, draw: 0, present: 1, ci: 1, review: 3 }[p.intent];
+    if (where != null && !clock.seeking) {
+      const far = actors.some((id) => rt.view(id)?.floor !== where);
+      if (far) rt.camera('all');
+      (async () => {
+        for (let i = 0; i < 100 && !tk.cancelled; i++) {
+          await rt.sleep(0.5, tk);
+          if (actors.every((id) => !rt.visible(id) || ctx.agents.isArrived(id))) break;
+        }
+        if (!tk.cancelled) rt.camera({ type: 'floor', floor: where });
+      })();
+    }
     const report = (id, msg, o = {}) => rt.say(id, msg, { ms: 4600, slack: true, ...o });
 
     switch (p.intent) {

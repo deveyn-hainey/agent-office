@@ -101,6 +101,19 @@ export function createRuntime(ctx) {
     return ok && !tk?.cancelled;
   };
 
+  // directed camera: only when "Auto camera follow" is on and the human has not touched the camera recently
+  rt.camera = (view, o = {}) => {
+    const cam = ctx.cam;
+    if (!cam || cam.userActive?.(20) || ctx.ui?.routines?.camera === false) return false;
+    cam.setView(view, { animate: !clock.seeking, duration: o.duration ?? 1.3 });
+    return true;
+  };
+  // floor index a slot spec ('slot:x' | 'free:prefix' | 'x') lives on
+  rt.floorOf = (spec) => {
+    const id = String(spec || '').replace(/^slot:|^free:/, '');
+    return ctx.world?.slot?.(id)?.floor ?? ctx.world?.slots?.(id)?.[0]?.floor ?? null;
+  };
+
   // short human label for a slot id (used in activity lines)
   rt.placeLabel = (spec) => {
     const s = String(spec || '').replace(/^slot:|^free:/, '');

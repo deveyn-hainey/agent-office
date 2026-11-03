@@ -141,6 +141,7 @@ export function createScene(container, { bus, clock, world }) {
     setInsets(i) { Object.assign(rig.insets, i); if (!rig.tween && rig.view.type !== 'desk') { const g = goalFor(rig.view); rig.viewH = g.viewH; } },
     getInsets: () => ({ ...rig.insets }),
     setLocator(fn) { rig.locator = fn; }, // fn(agentId) -> {x,y,z} world position | null
+    markUser() { rig.lastUser = performance.now(); },
     userActive: (sec = 15) => performance.now() - rig.lastUser < sec * 1000,
     get viewH() { return rig.viewH; },
     get target() { return rig.target; },

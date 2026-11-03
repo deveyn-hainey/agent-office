@@ -1,3 +1,12 @@
 node_modules
 .DS_Store
 reference.jpg
+
+# local-only (never commit)
+local/
+*.export.json
+*.local.json
+.env
+.env.*
+node_modules/
+scripts/.*.bak

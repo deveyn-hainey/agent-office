@@ -32,6 +32,7 @@ export function createControls(ctx, store, api, panels, feeds) {
   nav.addEventListener('click', (e) => {
     const b = e.target.closest('button'); if (!b) return;
     const c = cam(); if (!c) return;
+    if (b.dataset.v || b.dataset.f != null || b.dataset.d || b.dataset.z) c.markUser?.();
     if (b.dataset.v === 'all') c.setView('all');
     else if (b.dataset.v === 'clean') c.setClean(!c.isClean());
     else if (b.dataset.f != null) c.setView({ type: 'floor', floor: +b.dataset.f });
@@ -197,6 +198,7 @@ export function createControls(ctx, store, api, panels, feeds) {
     if (isTyping(e.target)) { if (e.key === 'Escape') e.target.blur(); return; }
     const c = cam();
     const k = e.key;
+    if ((k >= '1' && k <= '4') || 'aAcC'.includes(k)) c?.markUser?.();
     if (k >= '1' && k <= '4') c?.setView({ type: 'floor', floor: +k - 1 });
     else if (k === 'a' || k === 'A') c?.setView('all');
     else if (k === 'c' || k === 'C') c?.setClean(!c.isClean());
@@ -219,7 +221,10 @@ export function createControls(ctx, store, api, panels, feeds) {
   function applyInsets() {
     const c = cam(); if (!c?.setInsets) return;
     let ins = { left: 0, right: 0, top: 0, bottom: 0 };
-    if (!body.classList.contains('clean')) {
+    if (body.classList.contains('clean')) {
+      const navR = nav.offsetParent !== null ? nav.getBoundingClientRect() : null;
+      ins.bottom = Math.round(innerHeight - (navR?.top ?? innerHeight) + 6); // keep the floating nav clear of the model
+    } else {
       const W = innerWidth, H = innerHeight, wide = W >= 1100;
       const r = (el) => (el && el.offsetParent !== null ? el.getBoundingClientRect() : null);
       const cmdR = r(cmd), navR = r(nav), rcR = r(rc), pillR = r($('top-pill'));

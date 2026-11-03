@@ -146,7 +146,7 @@ export function createAmbient(ctx, rt, actions, isClaimed) {
     const roll = Math.random();
     const second = shuffled.find((x) => x !== a);
     if (status(a) === 'resting' && atHome(a) && roll < 0.55) return act.settle(a);
-    if (simNow - lastStandup > 120 && roll < 0.12 && pool.length >= 3 && !pool.some((x) => isClaimed(x.id))) {
+    if (ctx.ui?.routines?.standups !== false && simNow - lastStandup > 120 && roll < 0.12 && pool.length >= 3 && !pool.some((x) => isClaimed(x.id))) {
       lastStandup = simNow;
       return act.standup(shuffled.slice(0, 3));
     }

@@ -1,6 +1,6 @@
 # Agent Office v2 — build brief (shared by every Claude session)
 
-You are one of several Claude Code sessions building "Agent Office v2" in this repo (`/workspace/agent-office`, branch `office-v2-floors`).
+You are one of several Claude Code sessions building "Agent Office v2" in this repo (`/workspace/agent-office-v2`, a git worktree on branch `office-v2-floors`).
 An orchestrator coordinates you, integrates, runs a headless browser, and commits. **Do not run git commit/push/checkout/reset.**
 Only edit the files your session owns (listed in your task). If you need something from another module, code against the
 contract in `docs/ARCHITECTURE.md`; if the contract is missing something, add a short note to `docs/notes/<your-session>.md` and

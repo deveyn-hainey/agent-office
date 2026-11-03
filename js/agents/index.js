@@ -210,6 +210,9 @@ export function createAgents(ctx) {
 
   const waiting = new Map(); // floor -> [agentIds] queueing at the elevator
 
+  const MAX_RIDERS = 3; // leader + up to two companions heading the same way share one car trip
+  const RIDE_OFF = [{ x: -0.95, z: 0.25 }, { x: 0.95, z: 0.25 }];
+
   async function elevatorTrip(a, mv, to, run) {
     const from = a.floor;
     const E = world.elevator;
@@ -218,32 +221,62 @@ export function createAgents(ctx) {
     const q = waiting.get(from) || [];
     waiting.set(from, q);
     q.push(a.id);
-    mv.onCancel(() => { const i = q.indexOf(a.id); if (i >= 0) q.splice(i, 1); });
+    a.elev = { to, ready: false, join: null, taken: false };
+    const joinP = new Promise((res) => { a.elev.join = res; });
+    mv.onCancel(() => { const i = q.indexOf(a.id); if (i >= 0) q.splice(i, 1); a.elev = null; });
     const spot = spots[(q.indexOf(a.id)) % Math.max(1, spots.length)] || { x: wd.elevator.x, z: wd.elevator.doorZ + 1.5, facing: PI };
     const leaveQ = () => { const i = q.indexOf(a.id); if (i >= 0) q.splice(i, 1); };
     if (!(await walkTo(a, mv, spot.x, spot.z, { run, facing: spot.facing }))) { leaveQ(); return false; }
     a.baseYaw = a.yawTarget = spot.facing;
     if (!E?.acquire || !E.moveTo || !E.carPos) { leaveQ(); return fadeHop(a, mv, to, spot); }
 
-    let release = null, released = false;
+    let release = null, released = false, joined = false;
     const rel = () => { if (!released && release) { released = true; try { release(); } catch (e) { /* ignore */ } } };
     mv.onCancel(rel);
     try {
-      const acq = Promise.resolve(E.acquire()).then((r) => { release = r; if (mv.cancelled) rel(); return r; });
-      await mv.race(acq);
+      const acq = Promise.resolve(E.acquire()).then((r) => { release = r; if (mv.cancelled || joined) rel(); return r; });
+      // while queueing, a car already loading for the same destination may pick this agent up
+      a.elev.ready = true;
+      const got = await mv.race(Promise.race([acq.then(() => null), joinP]));
       if (mv.cancelled) return false;
       leaveQ();
+      if (got) { joined = true; return await passengerRide(a, mv, got, run); }
+      a.elev = null;
       const carFloor = Math.round(E.carPos().y / wd.floorPitch);
       if (carFloor !== from) await mv.race(E.moveTo(from));
       if (mv.cancelled) return false;
       await mv.race(E.open(from));
       if (mv.cancelled) return false;
+      // hold the doors for companions still walking over (same destination), then recruit everyone who is waiting
+      for (let i = 0; i < 40 && !mv.cancelled; i++) {
+        const pending = q.some((id) => { const b = agents.get(id); return id !== a.id && b?.elev && !b.elev.taken && !b.elev.ready && b.elev.to === to; });
+        if (!pending) break;
+        await mv.race(sleep(mv, 0.25));
+      }
+      if (mv.cancelled) return false;
+      const trip = { from, to, riders: [], boarded: 0, closedP: null, arrivedP: null, closedRes: null, arrivedRes: null, cleared: 0, clearP: null, clearRes: null };
+      trip.clearP = new Promise((r) => { trip.clearRes = r; });
+      trip.cleared = 0;
+      trip.closedP = new Promise((r) => { trip.closedRes = r; });
+      trip.arrivedP = new Promise((r) => { trip.arrivedRes = r; });
+      for (const id of [...q]) {
+        if (trip.riders.length >= MAX_RIDERS - 1) break;
+        const b = agents.get(id);
+        if (b?.elev?.ready && !b.elev.taken && b.elev.to === to && b.elev.join) {
+          b.elev.taken = true;
+          trip.riders.push(b);
+          b.elev.join({ trip, idx: trip.riders.length - 1 });
+        }
+      }
       const door = E.doorPos(from), car = E.carPos();
       if (!(await mv.race(walkPts(a, mv, [{ x: door.x, z: door.z }, { x: car.x, z: car.z }], { run: false })))) return false;
       a.yawTarget = a.baseYaw = 0;
       await mv.race(sleep(mv, 0.25));
+      // wait (briefly) until the companions are aboard
+      for (let i = 0; i < 40 && trip.boarded < trip.riders.length && !mv.cancelled; i++) await mv.race(sleep(mv, 0.15));
       await mv.race(E.close(from));
       if (mv.cancelled) return false;
+      trip.closedRes();
       // ride
       a.riding = 'elevator'; a.rideTo = to; a.floor = to; a.rideFollow = true; a.fadeT = 0.3;
       bus.emit('agent:ride', { id: a.id, mode: 'elevator', from, to });
@@ -252,19 +285,53 @@ export function createAgents(ctx) {
       a.rideFollow = false;
       await mv.race(E.open(to));
       if (mv.cancelled) return false;
+      trip.arrivedRes();
       a.riding = null; a.fadeT = 1;
       const door2 = E.doorPos(to);
       const spots2 = [`elevator-${to + 1}f`, `elevator-${to + 1}f-2`, `elevator-${to + 1}f-3`].map(slotOf).filter(Boolean);
       const out = spots2[hash(a.id) % Math.max(1, spots2.length)];
-      const pts = [{ x: door2.x, z: door2.z }];
-      if (out) pts.push({ x: out.x, z: out.z });
-      const ok = await mv.race(walkPts(a, mv, pts, { run }));
-      // close the doors behind us without making the agent wait for it
+      // step out of the car first; once everyone is clear the doors close and the car is free while we finish walking
+      let ok = await mv.race(walkPts(a, mv, [{ x: door2.x, z: door2.z }], { run }));
+      if (trip.riders.length) await mv.race(trip.clearP);
       Promise.resolve(E.close(to)).catch(() => {}).finally(rel);
+      if (ok && out && !mv.cancelled) ok = await mv.race(walkPts(a, mv, [{ x: out.x, z: out.z }], { run }));
       return !!ok && !mv.cancelled;
     } finally {
+      a.elev = null;
       if (mv.cancelled || a.riding) rel();
       leaveQ();
+    }
+  }
+
+  // a companion who boards the car another agent has already acquired
+  async function passengerRide(b, mv, { trip, idx }, run) {
+    const E = world.elevator, { from, to } = trip;
+    const off = RIDE_OFF[idx % RIDE_OFF.length];
+    let cleared = false;
+    const clear = () => { if (cleared) return; cleared = true; if (++trip.cleared >= trip.riders.length) trip.clearRes(); };
+    const end = () => { b.rideFollow = false; b.rideOff = null; clear(); };
+    mv.onCancel(end);
+    try {
+      const door = E.doorPos(from), car = E.carPos();
+      if (!(await mv.race(walkPts(b, mv, [{ x: door.x + off.x * 0.3, z: door.z }, { x: car.x + off.x, z: car.z + off.z }], { run: false })))) return false;
+      b.yawTarget = b.baseYaw = 0;
+      trip.boarded++;
+      await mv.race(trip.closedP);
+      if (mv.cancelled) return false;
+      b.riding = 'elevator'; b.rideTo = to; b.floor = to; b.rideFollow = true; b.rideOff = off; b.fadeT = 0.3;
+      bus.emit('agent:ride', { id: b.id, mode: 'elevator', from, to });
+      await mv.race(trip.arrivedP);
+      if (mv.cancelled) return false;
+      b.rideFollow = false; b.rideOff = null; b.riding = null; b.fadeT = 1;
+      const door2 = E.doorPos(to);
+      const spots2 = [`elevator-${to + 1}f`, `elevator-${to + 1}f-2`, `elevator-${to + 1}f-3`].map(slotOf).filter(Boolean);
+      const out = spots2[(hash(b.id) + idx + 1) % Math.max(1, spots2.length)];
+      let ok = await mv.race(walkPts(b, mv, [{ x: door2.x + off.x * 1.0, z: door2.z + 0.2 }], { run }));
+      clear();
+      if (ok && out && !mv.cancelled) ok = await mv.race(walkPts(b, mv, [{ x: out.x, z: out.z }], { run }));
+      return !!ok && !mv.cancelled;
+    } finally {
+      end();
     }
   }
 
@@ -433,7 +500,7 @@ export function createAgents(ctx) {
     // movement
     if (a.rideFollow && world.elevator?.carPos) {
       const c = world.elevator.carPos();
-      a.x = c.x; a.z = c.z; a.y = c.y;
+      a.x = c.x + (a.rideOff?.x || 0); a.z = c.z + (a.rideOff?.z || 0); a.y = c.y;
       a.speed = 0;
     } else if (a.walk) {
       for (let i = 0; i < sub && a.walk; i++) stepWalk(a, dt / sub, now);

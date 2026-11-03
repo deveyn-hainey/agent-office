@@ -71,7 +71,7 @@ export function createPanels(ctx, store, api) {
   left.addEventListener('click', (e) => {
     const t = e.target;
     const ask = t.closest('[data-ask]'); if (ask) { ctx.director?.answer?.(ask.dataset.ask, ask.dataset.choice); return; }
-    const fl = t.closest('[data-floor]'); if (fl) { cam()?.setView({ type: 'floor', floor: +fl.dataset.floor }); return; }
+    const fl = t.closest('[data-floor]'); if (fl) { cam()?.markUser?.(); cam()?.setView({ type: 'floor', floor: +fl.dataset.floor }); return; }
     const a = t.closest('[data-act]'); if (a?.dataset.act === 'map') api.openProjectMap();
   });
   left.addEventListener('change', (e) => {

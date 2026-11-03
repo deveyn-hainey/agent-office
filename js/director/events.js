@@ -100,13 +100,20 @@ export function createHandlers(ctx, rt, actions, d) {
       bus.emit('ask:open', { id: e.id, agent: e.agent, text: e.text, options });
       rt.activity(e.agent, e.text, 'ask');
       if (e.slack !== false) rt.slack(rt.fullName(e.agent), e.text);
+      // directed camera: swing in on whoever is asking, then return to the previous view
+      const cam = ctx.cam;
+      const prev = cam?.getView?.();
+      if (e.cam !== false && !clock.seeking && rt.camera({ type: 'desk', agent: e.agent }, { duration: 1 })) {
+        rt.sleep(4.5, d.sceneToken).then((ok) => {
+          const v = cam.getView();
+          if (ok && v.type === 'desk' && v.agent === e.agent) rt.camera(prev, { duration: 1.1 });
+        });
+      }
     },
 
     toast(e) { rt.toast(e.text, e.kind || 'info', e.agent); },
     camera(e) {
-      const cam = ctx.cam || ctx.scene?.cam;
-      if (!cam || cam.userActive?.(20)) return;
-      cam.setView(e.view, { duration: e.duration, animate: !clock.seeking });
+      rt.camera(e.view, { duration: e.duration });
     },
     door(e) { Promise.resolve(W()?.setDoor?.(e.door, e.open)).catch(() => {}); },
     spawn(e) {

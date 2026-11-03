@@ -125,6 +125,7 @@ cam.setInsets({left,right,top,bottom})  // px of the viewport covered by UI; the
 cam.getInsets()
 cam.setLocator(fn)       // fn(agentId) -> {x,y,z}|null world position for desk view (main.js wires agents.getWorldPosition)
 cam.userActive(sec=15)   // true if the human wheel/dragged within `sec` seconds (the director must not hijack the camera then)
+cam.markUser()           // UI nav buttons/keys call this so the director treats a click like a manual camera move
 cam.viewH, cam.target    // read-only: visible world height, look-at point
 ```
 Views: **all** = 4 stacked floors fitted (floorPitch 28 leaves interiors visible; upper slabs only clip the far-corner tip of the floor below); **floor n** = one floor fitted to the free area (dotted room annotations are shown only in this view — S1 listens to `cam:view`); **desk** = tight on one agent, follows it smoothly (right panel swaps to the agent's stats — S4 listens to `cam:view`). User wheel zoom / drag pan work in all views and keep the view type; any `setView` re-fits.

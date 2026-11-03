@@ -22,12 +22,14 @@ export function createUI(ctx) {
   api.openDeskView = (id) => {
     if (!store.agent(id)) return;
     const c = cam();
+    c?.markUser?.();
     if (c?.getView?.().type !== 'desk') bus.emit('ui:desk-request', { id });
     c?.setView({ type: 'desk', agent: id });
   };
   api.closeDeskView = () => {
     const c = cam();
     if (c?.getView?.().type !== 'desk') return;
+    c.markUser?.();
     c.setView(panels.prevView || 'all');
   };
   api.escape = () => overlays.escape();
