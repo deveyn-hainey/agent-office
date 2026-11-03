@@ -8,6 +8,7 @@
 //   'operator' -> a human in the Operator Room { who, text, slot?, target? }
 //   everything else goes straight to director.ingest(): say, status, move, board, jira, ci, screen, finding, ask, toast, cheer, …
 import { truncate, esc } from '../../core/util.js';
+import { morph } from '../../ui/dom.js';
 
 const POLL_MS = 30e3;
 const STATE_TYPES = new Set(['jira', 'ci', 'board', 'screen', 'finding', 'binder', 'xray', 'surface', 'status']);
@@ -155,7 +156,7 @@ export function createAdapter(ctx, opts = {}) {
         const total = [...counts.values()].reduce((n, v) => n + v, 0);
         const btn = (id, label, n, color) => `<button class="chip${channel === id ? ' on' : ''}" data-chan="${esc(id)}" aria-pressed="${channel === id}">${color ? `<i style="background:${color}"></i>` : ''}${esc(label)}<em>${n}</em></button>`;
         const html = `<span class="lbl">Channel</span>${btn('all', 'All', total)}${chans.map((c, i) => btn(c, c, counts.get(c), COLORS[i % COLORS.length])).join('')}`;
-        if (html !== sig) { sig = html; chipsEl.innerHTML = html; }
+        if (html !== sig) { sig = html; morph(chipsEl, html); }
       },
     };
   })();

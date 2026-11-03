@@ -840,9 +840,7 @@ export function createAgents(ctx) {
   const applyView = (view) => {
     bubbles.setTags(!!view && view.type !== 'all');
     if (!view) return;
-    if (view.type === 'floor') floorCap = view.floor;
-    else if (view.type === 'desk') floorCap = agents.get(view.agent)?.floor ?? nF - 1;
-    else floorCap = nF - 1;
+    // floorCap itself follows the world's 'world:floors' (single source of truth for the cutaway; spot views included)
   };
   bus.on('cam:view', ({ view }) => applyView(view));
   bus.on('world:floors', ({ upTo }) => { if (Number.isInteger(upTo)) floorCap = upTo; });

@@ -42,14 +42,14 @@ export function createControls(ctx, store, api, panels, feeds) {
     else if (b.dataset.t === 'map') api.openProjectMap();
   });
   const zoomBox = $('zoom-box');
-  zoomBox.innerHTML = '<button data-z="1.4" title="Zoom in (+)" aria-label="Zoom in">+</button><button data-z="0.7" title="Zoom out (−)" aria-label="Zoom out">−</button><button data-fit="1" class="fit" title="Fit floor (F)" aria-label="Fit floor">⤢</button>';
+  zoomBox.innerHTML = '<button data-z="1.4" title="Zoom in (+)" aria-label="Zoom in">+</button><button data-z="0.7" title="Zoom out (−)" aria-label="Zoom out">−</button><button data-fit="1" class="fit" title="Fit all floors (F)" aria-label="Fit all floors">⤢</button>';
   // fit: back to the overview of the floor being looked at (or all floors)
   const fitView = () => {
     const c = cam(); if (!c) return;
     c.markUser?.();
-    const v = c.getView?.() || { type: 'all' };
-    const f = v.type === 'floor' ? v.floor : v.type === 'spot' && Number.isInteger(v.floor) ? v.floor : null;
-    c.setView(f != null ? { type: 'floor', floor: f } : 'all');
+    // fit = the whole building, every floor visible (also the way out of any focus / cutaway)
+    if (c.getView?.().type === 'desk') api.closeDeskView?.();
+    c.setView('all');
   };
   zoomBox.addEventListener('click', (e) => {
     if (e.target.closest('[data-fit]')) return fitView();
@@ -273,11 +273,11 @@ export function createControls(ctx, store, api, panels, feeds) {
     else if (k === '/') { e.preventDefault(); input.focus(); }
     else if (k === ' ' && (e.target === document.body || e.target.closest?.('#stage'))) { e.preventDefault(); ctx.replay ? ctx.replay.toggle() : clock.toggle(); paintTransport(); }
     else if (k === 'Escape') {
-      if (api.escape?.()) return;
-      const v = c?.getView?.();
+      const closed = api.escape?.();
+      // Esc always leaves a focus: whatever was cut away (floor / desk / board close-up) comes back, camera stays put
+      if (c?.isCut?.()) { c.markUser?.(); c.revealAll(); return; }
+      if (closed) return;
       if (/drawer-/.test(body.className)) body.classList.remove('drawer-left', 'drawer-right', 'drawer-activity');
-      else if (v?.type === 'desk') api.closeDeskView();
-      else if (v?.type === 'floor') c.setView('all');
       else if (c?.isClean?.()) c.setClean(false);
     }
   });

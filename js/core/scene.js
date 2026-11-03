@@ -83,7 +83,7 @@ export function createScene(container, { bus, clock, world }) {
     if (view.type === 'spot') {
       // close-up on a point (board focus / double-click zoom): explicit viewH, or fit a w x h box
       const t = new THREE.Vector3(+view.x || 0, +view.y || 0, +view.z || 0);
-      return { target: t, viewH: clamp(view.viewH ?? fit((view.w || 10) * 1.2, (view.h || 5) * 1.9), 6, 150) };
+      return { target: t, viewH: clamp(view.viewH ?? fit((view.w || 10) * 1.2, (view.h || 5) * 1.9), 6, 400) };
     }
     const h = hint.allView || { fitW: 54, fitH: 108 };
     return { target: new THREE.Vector3(0, (floorY(nFloors - 1) + floorY(0)) / 2 + wallH * 0.45 - BASE_H / 2, 0), viewH: fit(h.fitW, h.fitH + BASE_H * 0.9) };
@@ -167,22 +167,43 @@ export function createScene(container, { bus, clock, world }) {
   el.style.touchAction = 'none';
   // zoom by factor f (>1 = in) keeping the world point under (clientX, clientY) fixed on screen.
   // animate=true tweens there through a 'spot' view instead of jumping (double-click, +/- buttons).
+  // max zoom-out: a bit beyond the all-floors overview (never smaller than it, so the first wheel-out can't jump in)
+  const maxH = () => Math.max(150, goalFor({ type: 'all' }).viewH * 1.25);
+  // Focus views (floor, desk, board/spot with a floor) cut away the floors above the focused one. Zooming out to about
+  // about half a floor overview (or beyond) while cut away reveals every floor again: the cutaway is a close-up tool.
+  const revealH = () => goalFor({ type: 'floor', floor: 0 }).viewH * 0.55;
+  const isCut = (v = rig.view) => v.type === 'floor' || v.type === 'desk' || (v.type === 'spot' && Number.isInteger(v.floor));
+  // shared "un-focus": keep the camera exactly where it is, drop the cutaway (all floors visible, desk card closes)
+  function revealAll() {
+    if (!isCut()) return false;
+    const prev = rig.view, t = rig.target;
+    rig.tween = null;
+    rig.view = { type: 'spot', x: t.x, y: t.y, z: t.z, viewH: rig.viewH };
+    bus?.emit('cam:view', { view: rig.view, prev });
+    return true;
+  }
+  cam.isCut = () => isCut();
+  cam.revealAll = revealAll;
   function zoomAt(clientX, clientY, f, animate = false) {
-    const oldH = rig.viewH, newH = clamp(oldH / f, 6, 150);
+    const oldH = rig.viewH, newH = clamp(oldH / f, 6, maxH());
     const r = el.getBoundingClientRect();
     const nx = ((clientX - r.left) / r.width) * 2 - 1, ny = -(((clientY - r.top) / r.height) * 2 - 1);
     const aspect = size.w / size.h;
     const t = rig.target.clone();
     if (rig.view.type !== 'desk') t.addScaledVector(camRight, nx * (oldH - newH) * aspect / 2).addScaledVector(camUp, ny * (oldH - newH) / 2);
     rig.lastUser = performance.now();
-    if (animate && rig.view.type !== 'desk') {
-      const v = rig.view;
-      const floor = v.type === 'floor' ? v.floor : v.type === 'spot' ? v.floor : undefined;
-      setView({ type: 'spot', x: t.x, y: t.y, z: t.z, viewH: newH, floor, annot: v.type === 'floor' || !!v.annot }, { duration: 0.45 });
+    const v = rig.view;
+    const reveal = isCut(v) && f < 1 && newH > revealH();
+    if (animate && v.type !== 'desk') {
+      const floor = reveal ? undefined : v.type === 'floor' ? v.floor : v.type === 'spot' ? v.floor : undefined;
+      setView({ type: 'spot', x: t.x, y: t.y, z: t.z, viewH: newH, floor, annot: !reveal && (v.type === 'floor' || !!v.annot) }, { duration: 0.45 });
     } else {
       rig.target.copy(t);
       rig.viewH = newH;
       rig.tween = null;
+      // free view at this spot with no cutaway: every floor visible again (world + agents follow 'cam:view')
+      if (v.type === 'spot') Object.assign(v, { x: t.x, y: t.y, z: t.z, viewH: newH }); // keep resize/inset refits where the user left it
+      if (reveal) { const prev = rig.view; rig.view = { type: 'spot', x: t.x, y: t.y, z: t.z, viewH: newH }; bus?.emit('cam:view', { view: rig.view, prev }); }
     }
     bus?.emit('cam:zoom', { viewH: newH });
   }
@@ -190,7 +211,8 @@ export function createScene(container, { bus, clock, world }) {
   cam.zoomBy = (f) => { const r = el.getBoundingClientRect(); zoomAt(r.left + r.width / 2, r.top + r.height / 2, f, true); };
   // fly to a world point; w/h = size of the thing to frame (world units)
   cam.focusPoint = (p, o = {}) => { rig.lastUser = performance.now(); setView({ type: 'spot', x: p.x, y: p.y, z: p.z, w: o.w, h: o.h, viewH: o.viewH, id: o.id, floor: o.floor }, { duration: o.duration ?? 1.0 }); };
-  el.addEventListener('wheel', (e) => {
+  container.addEventListener('wheel', (e) => {
+    if (e.target !== el && !labelRenderer.domElement.contains(e.target)) return; // UI panels keep their own scrolling
     e.preventDefault();
     // trackpad pinch arrives as ctrl+wheel with small deltas: scale it up a little
     const k = e.ctrlKey ? 0.01 : 0.0012;

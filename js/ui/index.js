@@ -36,6 +36,9 @@ export function createUI(ctx) {
   };
   api.escape = () => overlays.escape() || boards.close();
 
+  // click on empty space (no bot / board / room under the cursor) = leave any focus: all floors back, camera stays put
+  bus.on('pick:click', ({ pick }) => { if (pick) return; const c = ctx.cam || ctx.scene?.cam; if (c?.isCut?.()) { c.markUser?.(); boards.close(); c.revealAll(); } });
+
   // picking: click an agent -> desk view; double-click handled in overlays (map)
   bus.on('agent:click', ({ id }) => api.openDeskView(id));
   bus.on('ui:scenario', () => panels.renderAll());

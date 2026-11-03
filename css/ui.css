@@ -120,8 +120,15 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px s
 .coll-h .t { flex: 1; }
 .coll-h .chev { color: #8b9099; transition: transform .2s; }
 .coll.open .chev { transform: rotate(180deg); }
-.coll-b { display: none; padding: 0 14px 12px; }
-.coll.open .coll-b { display: block; }
+.coll-h { transition: background .15s; border-radius: 14px; }
+.coll-h:hover { background: rgba(0,0,0,.025); }
+/* smooth expand/collapse: animate the row track 0fr -> 1fr (no display:none jump), crossfade the content */
+.coll-b { display: grid; grid-template-rows: 0fr; opacity: 0; visibility: hidden; padding: 0 14px; transition: grid-template-rows .26s cubic-bezier(.2,.8,.3,1), opacity .18s ease, padding .26s cubic-bezier(.2,.8,.3,1), visibility 0s linear .26s; }
+.coll.open .coll-b { grid-template-rows: 1fr; opacity: 1; visibility: visible; padding-bottom: 12px; transition: grid-template-rows .26s cubic-bezier(.2,.8,.3,1), opacity .22s ease .06s, padding .26s cubic-bezier(.2,.8,.3,1), visibility 0s; }
+.coll-i { overflow: hidden; min-height: 0; }
+.coll.open .coll-i { animation: collin .26s ease-out; }
+@keyframes collin { from { transform: translateY(-4px); } to { transform: none; } }
+@media (prefers-reduced-motion: reduce) { .coll-b, .coll.open .coll-b { transition: none; } .coll.open .coll-i { animation: none; } }
 .ask { background: #fff8ec; border-radius: 10px; padding: 8px 9px; margin-bottom: 7px; animation: pop .35s ease-out; }
 .ask-h { display: flex; align-items: center; gap: 6px; font-size: 12.5px; }
 .ask-h .bang { margin-left: auto; width: 18px; height: 18px; border-radius: 50%; background: var(--waiting); color: #fff; display: grid; place-items: center; font-weight: 800; font-size: 11px; }
@@ -383,10 +390,11 @@ body.clean #toast { top: 20px; }
 .op-bubble .op-role { font-size: 8.5px; letter-spacing: .09em; text-transform: uppercase; color: #3d7be0; font-weight: 800; }
 
 /* ---------------------------------------------------------------- boards: zoom & readability */
-#left-panel { flex: 0 1 auto; min-height: 0; }
-#boards-card { flex: none; max-height: 42%; overflow-y: auto; scrollbar-width: none; }
-#boards-card .coll-b[hidden] { display: none !important; }
-#boards-card.open .coll-b { display: block; }
+#left-panel { min-height: 0; overscroll-behavior: contain; }
+#boards-card { flex: 0 0 auto; max-height: 44%; overflow-y: auto; scrollbar-width: none; overscroll-behavior: contain; }
+/* left column: fixed frame (floors/approvals scroll inside, Boards pinned below) so nothing jumps when a tile opens */
+#left-col { display: flex; flex-direction: column; gap: 8px; }
+#left-col > #left-panel { flex: 1 1 0; min-height: 0; max-height: none; }
 .blist { display: flex; flex-direction: column; gap: 2px; margin-top: 4px; }
 .brow { display: grid; grid-template-columns: 22px 1fr auto; align-items: center; gap: 8px; border: 0; background: transparent; border-radius: 10px; padding: 5px 6px; cursor: pointer; text-align: left; }
 .brow:hover { background: var(--soft); }
@@ -479,3 +487,4 @@ body.live-mode.slack-open #needs-card { top: 140px; }
 body.live-mode #toast { top: 160px; }
 body.chan-filtered #boards-card .brow.dim { opacity: .38; filter: grayscale(1); }
 @media (max-width: 900px) { body.live-mode .chan-picker { top: 52px; left: 8px; right: 8px; max-width: none; width: auto; } }
+@media (max-width: 900px) { #left-col > #left-panel { flex: 0 1 auto; } }

@@ -2,7 +2,7 @@
 // prev/next cycling, "updated" glow dots, a Boards list with last-updated times + unread badges, and "Follow updates".
 // Purely local: reads world.surfaces state and bus 'surface:update' events; never sends anything anywhere.
 import { esc } from '../core/util.js';
-import { $, h } from './dom.js';
+import { $, h, morph } from './dom.js';
 
 const LABELS = {
   'board-4f': 'Planning whiteboard', 'vote-4f': '#decisions board', 'screen-3f-a': 'Conference Room A screen',
@@ -224,14 +224,8 @@ export function createBoards(ctx, store) {
       return `<button class="brow${openId === id ? ' on' : ''}${fresh ? ' fresh' : ''}${dim ? ' dim' : ''}" data-board="${esc(id)}"><span class="fnum">${floorOf(id) + 1}</span><span class="bmid"><b>${esc(label(id))}</b><small>${m.updated ? ago(m.updated) : '—'}</small></span>${m.unread ? `<em class="bunread">${m.unread}</em>` : ''}</button>`;
     }).join('');
     const html = `<button class="coll-h" data-btoggle="1"><span class="t">Boards</span>${unreadTotal ? `<em class="count warn">${unreadTotal}</em>` : `<em class="count">${list.length}</em>`}</button>
-      <div class="coll-b"${listOpen ? '' : ' hidden'}><label class="routine"><span><b>Follow updates</b><small>Fly to a board when it changes</small></span><input type="checkbox" class="sw" data-follow ${follow ? 'checked' : ''}><i class="swi"></i></label><div class="blist">${rows}</div></div>`;
-    if (card._html !== html) {
-      const lst = card.querySelector('.blist'), top = lst ? lst.scrollTop : 0, f = document.activeElement && card.contains(document.activeElement);
-      const fk = f ? (document.activeElement.dataset.board ? `[data-board="${document.activeElement.dataset.board}"]` : document.activeElement.matches('[data-follow]') ? '[data-follow]' : null) : null;
-      card._html = html; card.innerHTML = html;
-      const nl = card.querySelector('.blist'); if (nl) nl.scrollTop = top;
-      if (fk) card.querySelector(fk)?.focus();
-    }
+      <div class="coll-b"><div class="coll-i"><label class="routine"><span><b>Follow updates</b><small>Fly to a board when it changes</small></span><input type="checkbox" class="sw" data-follow ${follow ? 'checked' : ''}><i class="swi"></i></label><div class="blist">${rows}</div></div></div>`;
+    morph(card, html); // in place: the 5 s 'ago' refresh and live updates never flash the list
     card.classList.toggle('open', listOpen);
   }
   card.addEventListener('click', (e) => {

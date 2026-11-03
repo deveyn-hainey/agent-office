@@ -1,8 +1,8 @@
 // Top pill, needs-you card, left panel (floors / approvals / finished / routines), right floor card (bots) and the desk-view card.
 import { STATES, esc, truncate, denverHM } from '../core/util.js';
-import { $, h, avatarHTML, meepleSVG, trapKeys, SC } from './dom.js';
+import { $, h, avatarHTML, meepleSVG, trapKeys, SC, morph } from './dom.js';
 
-const setHTML = (el, html) => { if (el._html !== html) { el._html = html; el.innerHTML = html; } };
+const setHTML = morph; // in-place DOM updates: no blank frames / replayed animations on re-render
 const STATUS_ORDER = ['working', 'waiting', 'error', 'resting'];
 const CHIP_LABEL = { working: 'working', waiting: 'waiting', error: 'errors', resting: 'resting', finished: 'finished' };
 const SHORT = { working: 'Working', waiting: 'Waiting', error: 'Error', resting: 'Resting', finished: 'Finished' };
@@ -43,7 +43,7 @@ export function createPanels(ctx, store, api) {
   // ------------------------------------------------------------------ left panel
   const left = $('left-panel');
   const openSecs = new Set(['waiting']);
-  const sec = (key, title, count, body, badge) => `<section class="card sec coll${openSecs.has(key) ? ' open' : ''}" data-sec="${key}"><button class="coll-h" data-toggle="${key}"><span class="t">${title}</span>${count != null ? `<em class="count${badge ? ' ' + badge : ''}">${count}</em>` : ''}${CHEV}</button><div class="coll-b">${body}</div></section>`;
+  const sec = (key, title, count, body, badge) => `<section class="card sec coll${openSecs.has(key) ? ' open' : ''}" data-sec="${key}"><button class="coll-h" data-toggle="${key}"><span class="t">${title}</span>${count != null ? `<em class="count${badge ? ' ' + badge : ''}">${count}</em>` : ''}${CHEV}</button><div class="coll-b"><div class="coll-i">${body}</div></div></section>`;
   function floorRows() {
     const cur = view();
     const all = store.agents(true);
@@ -74,7 +74,7 @@ export function createPanels(ctx, store, api) {
       ['daynight', 'Day/night lighting', 'Follows Denver time'],
       ['camera', 'Auto camera follow', 'Director steers the view'],
     ].map(([id, t, d]) => `<label class="routine"><span><b>${t}</b><small>${d}</small></span><input type="checkbox" class="sw" data-routine="${id}" ${s.routines[id] ? 'checked' : ''}><i class="swi"></i></label>`).join('');
-    setHTML(left, `<section class="card sec"><h3 class="fh"><span>Floors</span><em>4</em></h3><div class="floor-list">${floorRows()}</div></section>`
+    setHTML(left, `<section class="card sec" data-sec="floors"><h3 class="fh"><span>Floors</span><em>4</em></h3><div class="floor-list">${floorRows()}</div></section>`
       + sec('waiting', 'Waiting on me', s.asks.length, asks, s.asks.length ? 'warn' : '')
       + sec('finished', 'Finished', s.finished.length, fin)
       + sec('routines', 'Routines', 4, `${R}<button class="btn wide" data-act="map">Project map</button>`));
@@ -82,7 +82,15 @@ export function createPanels(ctx, store, api) {
   left.addEventListener('click', (e) => {
     const t = e.target;
     const ask = t.closest('[data-ask]'); if (ask) { ctx.director?.answer?.(ask.dataset.ask, ask.dataset.choice); return; }
-    const tg = t.closest('[data-toggle]'); if (tg) { const k = tg.dataset.toggle; if (openSecs.has(k)) openSecs.delete(k); else openSecs.add(k); renderLeft(); return; }
+    const tg = t.closest('[data-toggle]');
+    if (tg) {
+      const k = tg.dataset.toggle, opening = !openSecs.has(k);
+      if (opening) openSecs.add(k); else openSecs.delete(k);
+      renderLeft();
+      // an opened tile below the fold glides into view once it has expanded (the column itself never changes size)
+      if (opening) setTimeout(() => left.querySelector(`[data-sec="${k}"]`)?.scrollIntoView({ block: 'nearest', behavior: 'smooth' }), 270);
+      return;
+    }
     const fl = t.closest('[data-floor]'); if (fl) { cam()?.markUser?.(); cam()?.setView({ type: 'floor', floor: +fl.dataset.floor }); return; }
     const a = t.closest('[data-act]'); if (a?.dataset.act === 'map') api.openProjectMap();
   });
