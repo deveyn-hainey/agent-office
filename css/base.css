@@ -1,25 +1,25 @@
 /* Base reset + stage + shared tokens. Owned by S0; UI styling lives in css/ui.css (S4). */
 :root {
-  --cream: #f4ecdc;
-  --panel: rgba(255, 251, 242, 0.92);
-  --border: #d9ccb3;
-  --ink: #2b2622;
-  --muted: #7a6f60;
-  --working: #3fae5a; --waiting: #f2b632; --error: #e25a4f; --resting: #a49d90; --finished: #4c8dff;
-  --f4: #cdbcf0; --f3: #bfe3c6; --f2: #bcd6f2; --f1: #f3c6d3;
-  --serif: Georgia, "Iowan Old Style", "Times New Roman", serif;
-  --sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --cream: #ffffff;
+  --panel: rgba(255, 255, 255, 0.96);
+  --border: #eceef1;
+  --ink: #111114;
+  --muted: #8b9099;
+  --working: #3dba5f; --waiting: #f5a431; --error: #ef4f4f; --resting: #a7acb4; --finished: #3b82f6;
+  --f4: #e9e4f7; --f3: #e0f1e4; --f2: #e0ebf8; --f1: #f8e4ea;
+  --serif: Inter, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --sans: Inter, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 }
 * { box-sizing: border-box; }
-html, body { margin: 0; height: 100%; overflow: hidden; background: var(--cream); color: var(--ink); font: 14px/1.4 var(--sans); }
+html, body { margin: 0; height: 100%; overflow: hidden; background: #fff; color: var(--ink); font: 13px/1.4 var(--sans); -webkit-font-smoothing: antialiased; }
 #app { position: fixed; inset: 0; }
 #stage { position: absolute; inset: 0; }
 #stage canvas.gl { display: block; cursor: grab; }
 #stage canvas.gl.dragging { cursor: grabbing; }
 #ui-root { position: absolute; inset: 0; pointer-events: none; }
 #ui-root > * { pointer-events: auto; }
-.card { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; }
+.card { background: var(--panel); border: 1px solid rgba(0,0,0,.04); border-radius: 14px; }
 [hidden] { display: none !important; }
 body.clean #ui-root .ui-region:not(#bottom-nav) { display: none !important; }
 #fallback { position: absolute; inset: 0; display: grid; place-items: center; z-index: 50; }

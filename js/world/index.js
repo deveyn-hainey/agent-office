@@ -33,23 +33,23 @@ export function createWorld(ctx) {
   const mkInUse = (txt, bg) => {
     const c = document.createElement('canvas'); c.width = 256; c.height = 80;
     const g = c.getContext('2d');
-    g.fillStyle = '#2b2622'; g.beginPath(); g.roundRect(2, 2, 252, 76, 28); g.fill();
-    g.fillStyle = bg; g.beginPath(); g.roundRect(8, 8, 240, 64, 24); g.fill();
-    g.fillStyle = '#fff'; g.font = 'bold 40px ui-sans-serif,system-ui,sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(txt, 128, 42);
+    g.fillStyle = '#ffffff'; g.beginPath(); g.roundRect(2, 2, 252, 76, 38); g.fill();
+    g.fillStyle = bg; g.beginPath(); g.roundRect(10, 10, 236, 60, 30); g.fill();
+    g.fillStyle = '#fff'; g.font = '700 38px Inter,system-ui,sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(txt, 128, 42);
     const t = new T.CanvasTexture(c); t.colorSpace = T.SRGBColorSpace;
     return t;
   };
-  const inUseTex = { free: mkInUse('FREE', '#3fae5a'), busy: mkInUse('IN USE', '#e25a4f') };
+  const inUseTex = { free: mkInUse('FREE', '#34c759'), busy: mkInUse('IN USE', '#ff9f0a') };
 
   const floorMats = [];
   const makeMats = (i) => {
     const M = {
-      vc: new T.MeshLambertMaterial({ vertexColors: true }),
-      glass: new T.MeshLambertMaterial({ vertexColors: true, transparent: true, opacity: 0.26, depthWrite: false }),
-      doorGlass: new T.MeshLambertMaterial({ color: '#cfeaf4', transparent: true, opacity: 0.3, depthWrite: false }),
-      metal: new T.MeshLambertMaterial({ color: '#d9dde3' }),
+      vc: new T.MeshStandardMaterial({ vertexColors: true, roughness: 0.6, metalness: 0 }),
+      glass: new T.MeshStandardMaterial({ vertexColors: true, transparent: true, opacity: 0.2, roughness: 0.1, depthWrite: false }),
+      doorGlass: new T.MeshStandardMaterial({ color: '#e4f0f6', transparent: true, opacity: 0.22, roughness: 0.1, depthWrite: false }),
+      metal: new T.MeshStandardMaterial({ color: '#eceef1', roughness: 0.5 }),
       screen: {
-        off: new T.MeshBasicMaterial({ color: '#232a33' }),
+        off: new T.MeshBasicMaterial({ color: '#15171b' }),
         idle: new T.MeshBasicMaterial({ map: tex.idle }),
         code: tex.code.map((t) => new T.MeshBasicMaterial({ map: t })),
       },
@@ -57,7 +57,7 @@ export function createWorld(ctx) {
       sky: new T.MeshBasicMaterial({ map: tex.sky }),
       patch: new T.MeshBasicMaterial({ color: '#fff2c4', transparent: true, opacity: 0, depthWrite: false, blending: T.AdditiveBlending, side: T.DoubleSide }),
       lampPool: new T.MeshBasicMaterial({ map: tex.glow, color: '#ffc861', transparent: true, opacity: 0, depthWrite: false, blending: T.AdditiveBlending }),
-      inUse: { free: new T.MeshBasicMaterial({ map: inUseTex.free }), busy: new T.MeshBasicMaterial({ map: inUseTex.busy }) },
+      inUse: { free: new T.MeshBasicMaterial({ map: inUseTex.free, transparent: true }), busy: new T.MeshBasicMaterial({ map: inUseTex.busy, transparent: true }) },
     };
     M.lineMat = new T.LineBasicMaterial({ color: OUTLINE });
     return M;
@@ -94,11 +94,11 @@ export function createWorld(ctx) {
     cores[env.floor] = env.core;
     buildAnnotations(env);
     env.b.build(env.group, env.mats.vc, env.lineMat, `static-${env.floor}`);
-    if (env.glassBatch) env.glassBatch.build(env.group, env.mats.glass, env.lineMat, 'shaft-glass');
+    if (env.glassBatch) env.glassBatch.build(env.group, env.mats.glass, env.lineMat, 'shaft-glass', false);
     const merged = (geos, mat, order) => {
       if (!geos.length) return;
       const m = new T.Mesh(mergeGeometries(geos), mat);
-      m.userData.noPick = true; m.renderOrder = order; env.group.add(m);
+      m.userData.noPick = true; m.castShadow = false; m.receiveShadow = false; m.renderOrder = order; env.group.add(m);
     };
     merged(env.skyGeos, env.mats.sky, 0);
     merged(env.patchGeos, env.mats.patch, 2);

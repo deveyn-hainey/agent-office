@@ -1,76 +1,88 @@
-// Top pill, left panel (floors / approvals / finished / routines), right panel (bots) and the desk-view card.
-import { STATES, esc, truncate, denverHM, denverHMS, mmss } from '../core/util.js';
-import { $, h, avatarHTML, meepleSVG, trapKeys } from './dom.js';
+// Top pill, needs-you card, left panel (floors / approvals / finished / routines), right floor card (bots) and the desk-view card.
+import { STATES, esc, truncate, denverHM } from '../core/util.js';
+import { $, h, avatarHTML, meepleSVG, trapKeys, SC } from './dom.js';
 
 const setHTML = (el, html) => { if (el._html !== html) { el._html = html; el.innerHTML = html; } };
 const STATUS_ORDER = ['working', 'waiting', 'error', 'resting'];
 const CHIP_LABEL = { working: 'working', waiting: 'waiting', error: 'errors', resting: 'resting', finished: 'finished' };
+const SHORT = { working: 'Working', waiting: 'Waiting', error: 'Error', resting: 'Resting', finished: 'Finished' };
+const CHEV = '<svg class="chev" viewBox="0 0 12 12" width="12" height="12"><path d="M2.5 4.5 6 8l3.5-3.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 
 export function createPanels(ctx, store, api) {
-  const { bus, clock } = ctx;
-  const floors = ctx.data.world.floors || [];
-  const accent = (i) => floors[i]?.accent || '#d9ccb3';
+  const { bus } = ctx;
   const cam = () => ctx.cam || ctx.scene?.cam;
   const view = () => cam()?.getView?.() || { type: 'all' };
-  let scenarioTitle = '';
   let prevView = { type: 'all' };
 
-  // ------------------------------------------------------------------ top pill
+  // ------------------------------------------------------------------ top pill + needs-you card
   const pill = $('top-pill');
   function renderPill() {
     const c = store.counts();
     const chips = [...STATUS_ORDER, ...(c.finished ? ['finished'] : [])].map((k) => {
       const n = c[k] || 0;
-      return `<span class="chip st-${k}${n ? '' : ' zero'}"><i style="background:${STATES[k].color}"></i><b>${n}</b> ${CHIP_LABEL[k]}</span>`;
+      return `<span class="chip st-${k}${n ? '' : ' zero'}"><i style="background:${SC[k]}"></i><b>${n}</b> ${CHIP_LABEL[k]}</span>`;
     }).join('');
-    setHTML(pill, `<span class="brand"><svg viewBox="0 0 20 20" width="20" height="20" aria-hidden="true"><rect x="2" y="2" width="16" height="16" rx="5" fill="#d97757" stroke="#2b2622" stroke-width="1.6"/><circle cx="7.4" cy="9" r="1.5" fill="#2b2622"/><circle cx="12.6" cy="9" r="1.5" fill="#2b2622"/><path d="M7 13q3 2.4 6 0" stroke="#2b2622" stroke-width="1.6" fill="none" stroke-linecap="round"/></svg><span class="serif">Office Bot</span></span>`
-      + `<span class="chips">${chips}</span>`
-      + `<span class="sep"></span><span class="scn" title="Scenario">${esc(scenarioTitle || 'Free play · ambient life')}</span>`
-      + `<time id="pill-clock">${denverHMS(Date.now())}</time><span class="tz">MT</span>`);
+    setHTML(pill, `<span class="chips">${chips}</span>`);
   }
-  setInterval(() => { const el = $('pill-clock'); if (el) el.textContent = denverHMS(Date.now()); }, 1000);
-  bus.on('replay:load', (e) => { scenarioTitle = e.title || ''; renderPill(); });
-  bus.on('ui:scenario', (e) => { scenarioTitle = e.title || ''; });
+  const needs = $('needs-card');
+  function renderNeeds() {
+    const a = store.state.asks[0];
+    if (!a) { needs.hidden = true; needs._html = ''; return; }
+    const ag = store.agent(a.agent) || { short: a.agent, color: '#a7acb4' };
+    const more = store.state.asks.length > 1 ? `<span class="more">+${store.state.asks.length - 1}</span>` : '';
+    const opt = (a.options || ['Approve'])[0];
+    setHTML(needs, `<span class="nsq" style="background:${ag.color}"></span><div class="ntx"><b>${esc(ag.short)} needs you</b><span>${esc(truncate(a.text, 64))}</span></div>${more}<button class="btn grey" data-n="view" data-agent="${esc(a.agent)}">View</button><button class="btn primary" data-n="ok" data-ask="${esc(a.id)}" data-choice="${esc(opt)}">${/^approve/i.test(opt) ? 'Approve' : esc(opt)}</button>`);
+    needs.hidden = false;
+  }
+  needs.addEventListener('click', (e) => {
+    const b = e.target.closest('[data-n]'); if (!b) return;
+    if (b.dataset.n === 'view') api.openDeskView(b.dataset.agent);
+    else ctx.director?.answer?.(b.dataset.ask, b.dataset.choice);
+  });
 
   // ------------------------------------------------------------------ left panel
   const left = $('left-panel');
+  const openSecs = new Set(['waiting']);
+  const sec = (key, title, count, body, badge) => `<section class="card sec coll${openSecs.has(key) ? ' open' : ''}" data-sec="${key}"><button class="coll-h" data-toggle="${key}"><span class="t">${title}</span>${count != null ? `<em class="count${badge ? ' ' + badge : ''}">${count}</em>` : ''}${CHEV}</button><div class="coll-b">${body}</div></section>`;
   function floorRows() {
     const cur = view();
     const all = store.agents(true);
     let out = '';
     for (let f = 3; f >= 0; f--) {
       const here = all.filter((a) => a.floor === f);
-      const dots = here.map((a) => `<i class="bd" title="${esc(a.short)} · ${esc(STATES[a.status]?.label || a.status)}" style="--c:${a.color};--s:${STATES[a.status]?.color || '#a49d90'}"></i>`).join('');
+      const dots = here.map((a) => `<i class="bd" title="${esc(a.short)} · ${esc(STATES[a.status]?.label || a.status)}" style="background:${SC[a.status] || SC.resting}"></i>`).join('');
       const on = cur.type === 'floor' && cur.floor === f;
-      out += `<button class="floor-row${on ? ' on' : ''}" data-floor="${f}"><span class="fbadge" style="background:${accent(f)}">${f + 1}F</span><span class="fname">${esc(floors[f]?.name || store.FLOOR_NAMES[f])}</span><span class="dots">${dots}</span><span class="fcount">${here.length}</span></button>`;
+      const w = here.filter((a) => a.status === 'working').length;
+      out += `<button class="floor-row${on ? ' on' : ''}" data-floor="${f}"><span class="fnum">${f + 1}</span><span class="fmid"><span class="fname">${esc(store.FLOOR_NAMES[f] || '')}</span><span class="dots">${dots}</span></span><span class="fcount">${w}/${here.length}</span></button>`;
     }
     return out;
   }
   function renderLeft() {
     const s = store.state;
     const asks = s.asks.map((a) => {
-      const ag = store.agent(a.agent) || { id: a.agent, short: a.agent, color: '#a49d90' };
-      return `<div class="ask" data-ask-card="${esc(a.id)}"><div class="ask-h">${avatarHTML(ag, 24, STATES.waiting.color)}<b>${esc(ag.short)}</b><span class="muted">${esc(store.floorName(ag.floor).slice(0, 2))}</span><span class="bang">!</span></div><p>${esc(a.text)}</p><div class="btns">${(a.options || ['Approve', 'Skip']).map((o, i) => `<button class="btn ${i === 0 ? 'primary' : ''}" data-ask="${esc(a.id)}" data-choice="${esc(o)}">${esc(o)}</button>`).join('')}</div></div>`;
-    }).join('') || `<div class="empty">Nothing needs you right now <span class="ok">✓</span></div>`;
+      const ag = store.agent(a.agent) || { id: a.agent, short: a.agent, color: '#a7acb4' };
+      return `<div class="ask" data-ask-card="${esc(a.id)}"><div class="ask-h">${avatarHTML(ag, 22)}<b>${esc(ag.short)}</b><span class="bang">!</span></div><p>${esc(a.text)}</p><div class="btns">${(a.options || ['Approve', 'Skip']).map((o, i) => `<button class="btn ${i === 0 ? 'primary' : ''}" data-ask="${esc(a.id)}" data-choice="${esc(o)}">${esc(o)}</button>`).join('')}</div></div>`;
+    }).join('') || '<div class="empty">Nothing needs you</div>';
     const fin = s.finished.map((f) => {
-      const ag = store.agent(f.agent) || { short: f.agent || '—', color: '#4c8dff' };
+      const ag = store.agent(f.agent) || { short: f.agent || '—', color: SC.finished };
       const tag = f.choice ? `<span class="tag ${/skip/i.test(f.choice) ? 'skip' : 'ok'}">${esc(f.choice)}</span>` : f.kind === 'handoff' ? '<span class="tag">handoff</span>' : '';
       return `<div class="fin"><i class="tick">✓</i><div><div class="fin-t">${esc(truncate(f.text, 58))}</div><div class="muted">${esc(ag.short)} · ${denverHM(f.ts)} ${tag}</div></div></div>`;
-    }).join('') || `<div class="empty">Finished work lands here</div>`;
+    }).join('') || '<div class="empty">Finished work lands here</div>';
     const R = [
       ['ambient', 'Ambient office life', 'Coffee runs, naps, chats'],
       ['standups', 'Hourly standups', 'Quick huddle bubbles'],
       ['daynight', 'Day/night lighting', 'Follows Denver time'],
       ['camera', 'Auto camera follow', 'Director steers the view'],
     ].map(([id, t, d]) => `<label class="routine"><span><b>${t}</b><small>${d}</small></span><input type="checkbox" class="sw" data-routine="${id}" ${s.routines[id] ? 'checked' : ''}><i class="swi"></i></label>`).join('');
-    setHTML(left, `<section class="card sec"><h3 class="serif">Floors</h3><div class="floor-list">${floorRows()}</div></section>`
-      + `<section class="card sec"><h3 class="serif">Waiting on me${s.asks.length ? ` <em class="count">${s.asks.length}</em>` : ''}</h3>${asks}</section>`
-      + `<section class="card sec"><h3 class="serif">Finished</h3>${fin}</section>`
-      + `<section class="card sec"><h3 class="serif">Routines</h3>${R}<button class="btn wide" data-act="map">🗺 Project map</button></section>`);
+    setHTML(left, `<section class="card sec"><h3 class="fh"><span>Floors</span><em>4</em></h3><div class="floor-list">${floorRows()}</div></section>`
+      + sec('waiting', 'Waiting on me', s.asks.length, asks, s.asks.length ? 'warn' : '')
+      + sec('finished', 'Finished', s.finished.length, fin)
+      + sec('routines', 'Routines', 4, `${R}<button class="btn wide" data-act="map">Project map</button>`));
   }
   left.addEventListener('click', (e) => {
     const t = e.target;
     const ask = t.closest('[data-ask]'); if (ask) { ctx.director?.answer?.(ask.dataset.ask, ask.dataset.choice); return; }
+    const tg = t.closest('[data-toggle]'); if (tg) { const k = tg.dataset.toggle; if (openSecs.has(k)) openSecs.delete(k); else openSecs.add(k); renderLeft(); return; }
     const fl = t.closest('[data-floor]'); if (fl) { cam()?.markUser?.(); cam()?.setView({ type: 'floor', floor: +fl.dataset.floor }); return; }
     const a = t.closest('[data-act]'); if (a?.dataset.act === 'map') api.openProjectMap();
   });
@@ -78,16 +90,18 @@ export function createPanels(ctx, store, api) {
     const r = e.target.closest('[data-routine]'); if (r) store.toggleRoutine(r.dataset.routine, r.checked);
   });
 
-  // ------------------------------------------------------------------ right panel (bots)
+  // ------------------------------------------------------------------ right panel (floor card + bots)
   const right = $('right-panel');
   function renderRight() {
     const v = view();
     const list = store.agents(true);
     const shown = v.type === 'floor' ? list.filter((a) => a.floor === v.floor) : list;
-    const title = v.type === 'floor' ? `Bots on ${store.floorName(v.floor)}` : 'Bots in the office';
-    const rows = shown.map((a) => `<button class="bot" data-agent="${esc(a.id)}" style="--c:${a.color}">${avatarHTML(a, 30, STATES[a.status]?.color)}<span class="bot-m"><b>${esc(a.short)}${a.kind === 'subagent' ? ' <small class="sub">sub</small>' : ''}</b><span class="muted">${esc(a.role)}</span><span class="act">${esc(truncate(store.activityText(a.id), 64))}</span></span><span class="bot-r">${v.type === 'floor' ? '' : `<span class="ftag" style="background:${accent(a.floor)}">${a.floor + 1}F</span>`}<i class="stdot" style="background:${STATES[a.status]?.color}" title="${esc(STATES[a.status]?.label || '')}"></i></span></button>`).join('')
+    const working = shown.filter((a) => a.status === 'working').length;
+    const title = v.type === 'floor' ? (store.FLOOR_NAMES[v.floor] || 'Floor').split(' / ')[0] : 'Office';
+    const sub = v.type === 'floor' ? `Floor ${v.floor + 1} · ${shown.length} bots` : `4 floors · ${shown.length} bots`;
+    const rows = shown.map((a) => `<button class="bot" data-agent="${esc(a.id)}" style="--c:${a.color}"><span class="bsq"><i style="background:${a.color}"></i></span><span class="bot-m"><b>${esc(a.short)}${a.kind === 'subagent' ? ' <small class="sub">sub</small>' : ''}</b><span class="act">${esc(SHORT[a.status] || 'Resting')} · ${esc(truncate(store.activityText(a.id), 56))}</span></span><i class="stdot" style="background:${SC[a.status] || SC.resting}" title="${esc(STATES[a.status]?.label || '')}"></i></button>`).join('')
       || '<div class="empty">Nobody is on this floor right now.</div>';
-    setHTML(right, `<section class="card sec"><h3 class="serif">${esc(title)} <em class="count">${shown.length}</em></h3><div class="bots">${rows}</div></section>`);
+    setHTML(right, `<section class="card fcard"><header class="fhead"><div class="fh-top"><b>${esc(title)}</b><span>${sub}</span></div><div class="fh-big"><b>${working}</b> working</div></header><div class="bots">${rows}</div></section>`);
   }
   right.addEventListener('click', (e) => { const b = e.target.closest('[data-agent]'); if (b) api.openDeskView(b.dataset.agent); });
 
@@ -103,7 +117,7 @@ export function createPanels(ctx, store, api) {
     const q = (sel) => desk.querySelector(sel);
     desk.innerHTML = `<section class="card sec desk-card" style="--c:${a.color}">
       <div class="desk-top"><button class="btn small" data-d="back">‹ Back</button><span class="muted">Desk view</span><button class="btn small ghost" data-d="close" aria-label="Close desk view">✕</button></div>
-      <div class="desk-hero"><div class="portrait"></div><div class="who"><h2 class="serif"></h2><div class="muted role"></div><span class="state-chip"></span></div></div>
+      <div class="desk-hero"><div class="portrait"></div><div class="who"><h2></h2><div class="muted role"></div><span class="state-chip"></span></div></div>
       <div class="kv"><div><span class="k">Location</span><span class="v loc"></span></div><div><span class="k">Doing now</span><span class="v task"></span></div></div>
       <div class="stats"></div>
       <button class="btn wide binder-btn" data-d="binder">📓 Open binder / notebook</button>
@@ -131,7 +145,7 @@ export function createPanels(ctx, store, api) {
     if (sig !== lastDeskSig) { lastDeskSig = sig; refs.portrait.innerHTML = meepleSVG(a.color, a.status); }
     refs.name.textContent = a.name;
     refs.role.textContent = `${a.role}${a.seat ? ' · ' + a.seat : ''}`;
-    refs.chip.textContent = st.label; refs.chip.style.setProperty('--sc', st.color);
+    refs.chip.textContent = st.label; refs.chip.style.setProperty('--sc', SC[a.status] || SC.resting);
     refs.loc.textContent = locText(a);
     refs.task.textContent = store.activityText(deskId);
     setHTML(refs.stats, [['Tasks done', s.tasks, '✔'], ['Reviews', s.reviews, '🔎'], ['Coffees', s.coffees, '☕'], ['Naps', s.naps, '💤'], ['Min working', s.minutes, '⏱']].map(([k, v, i]) => `<div class="stat"><span class="si">${i}</span><b>${v}</b><span class="muted">${k}</span></div>`).join(''));
@@ -172,7 +186,7 @@ export function createPanels(ctx, store, api) {
     renderAll();
   });
 
-  function renderAll() { renderPill(); renderLeft(); if (deskId) renderDesk(); else renderRight(); }
+  function renderAll() { renderPill(); renderNeeds(); renderLeft(); if (deskId) renderDesk(); else renderRight(); }
   store.subscribe(renderAll);
   renderAll();
   bus.on('app:ready', renderAll);

@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Office Bot</title>
 <meta name="description" content="A multi-floor isometric office where an AI agent team lives and works (scripted replay).">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' rx='4' fill='%23d97757'/%3E%3C/svg%3E">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' rx='4' fill='%23111111'/%3E%3C/svg%3E">
 <link rel="stylesheet" href="css/base.css">
 <link rel="stylesheet" href="css/ui.css">
 <script type="importmap">
@@ -28,22 +28,26 @@
 
   <!-- UI regions (S4 owns the contents; ids are a stable contract) -->
   <div id="ui-root">
+    <div id="brand-card" class="card ui-region"></div>
     <header id="top-pill" class="card ui-region" aria-label="Office status"></header>
+    <div id="needs-card" class="card ui-region" hidden></div>
     <div id="replay-controls" class="card ui-region" aria-label="Scenario replay controls"></div>
     <div id="drawer-toggles" class="ui-region"></div>
     <div id="left-col" class="ui-col">
       <aside id="left-panel" class="ui-region"></aside>
     </div>
+    <section id="activity-log" class="card ui-region"></section>
     <div id="slack-col" class="ui-col">
       <section id="slack-pane" class="card ui-region" aria-label="Scenario replay chat (read-only)"></section>
     </div>
     <div id="right-col" class="ui-col">
       <aside id="right-panel" class="ui-region"></aside>
       <div id="desk-view" class="ui-region" hidden></div>
-      <section id="activity-log" class="card ui-region"></section>
     </div>
+    <div id="zoom-box" class="card ui-region"></div>
     <form id="command-box" class="card ui-region" autocomplete="off"></form>
     <nav id="bottom-nav" class="card ui-region" aria-label="Camera"></nav>
+    <div id="controls-hint" class="card ui-region">Drag <i>rotate</i> · Right-drag <i>WASD move</i> · Scroll <i>zoom</i> · ↑↓ <i>floors</i></div>
     <div id="binder-modal" class="ui-overlay" hidden></div>
     <div id="project-map" class="ui-overlay" hidden></div>
     <div id="summary-card" class="ui-overlay" hidden></div>

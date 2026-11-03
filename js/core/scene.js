@@ -2,10 +2,11 @@
 // createScene(container, { bus, clock, world }) -> scene API (see docs/ARCHITECTURE.md §4).
 import * as THREE from 'three';
 import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
-import { CREAM, clamp, easeInOut, parseView } from './util.js';
+import { clamp, easeInOut, parseView } from './util.js';
 
 const ELEV = Math.atan(1 / Math.SQRT2); // true isometric elevation (35.264°)
 const AZIM = Math.PI / 4;
+const BASE_H = 12; // white facade base under the lobby (world/building.js)
 const DIR = new THREE.Vector3(Math.cos(ELEV) * Math.sin(AZIM), Math.sin(ELEV), Math.cos(ELEV) * Math.cos(AZIM)); // camera sits at +x,+z,+y
 
 export function createScene(container, { bus, clock, world }) {
@@ -16,7 +17,9 @@ export function createScene(container, { bus, clock, world }) {
 
   const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false, powerPreference: 'high-performance' });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
-  renderer.setClearColor(new THREE.Color(CREAM), 1);
+  renderer.setClearColor(new THREE.Color('#ffffff'), 1);
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   renderer.domElement.className = 'gl';
   container.appendChild(renderer.domElement);
 
@@ -26,11 +29,18 @@ export function createScene(container, { bus, clock, world }) {
   container.appendChild(labelRenderer.domElement);
 
   const scene = new THREE.Scene();
-  scene.background = new THREE.Color(CREAM);
-  const ambient = new THREE.AmbientLight(0xffffff, 0.95);
-  const sun = new THREE.DirectionalLight(0xfff4e0, 1.0);
+  scene.background = new THREE.Color('#ffffff');
+  const ambient = new THREE.AmbientLight(0xffffff, 0.2);
+  const sun = new THREE.DirectionalLight(0xffffff, 1.5);
   sun.position.set(30, 60, 24);
-  scene.add(ambient, sun);
+  // soft shadows: the shadow frustum follows the camera (see updateSunShadow); world/lighting.js sets lights.sunOffset
+  sun.castShadow = true;
+  sun.shadow.mapSize.set(4096, 4096);
+  sun.shadow.radius = 4;
+  sun.shadow.bias = -0.0005;
+  sun.shadow.normalBias = 0.04;
+  const sunOffset = new THREE.Vector3(-26, 60, 34);
+  scene.add(ambient, sun, sun.target);
 
   const camera = new THREE.OrthographicCamera(-10, 10, 10, -10, 0.1, 800);
 
@@ -71,7 +81,7 @@ export function createScene(container, { bus, clock, world }) {
       return { target: t, viewH: fit(11, 8) };
     }
     const h = hint.allView || { fitW: 54, fitH: 108 };
-    return { target: new THREE.Vector3(0, (floorY(nFloors - 1) + floorY(0)) / 2 + wallH * 0.45, 0), viewH: fit(h.fitW, h.fitH) };
+    return { target: new THREE.Vector3(0, (floorY(nFloors - 1) + floorY(0)) / 2 + wallH * 0.45 - BASE_H / 2, 0), viewH: fit(h.fitW, h.fitH + BASE_H * 0.9) };
   }
 
   function applyCamera() {
@@ -225,6 +235,25 @@ export function createScene(container, { bus, clock, world }) {
   }
   new ResizeObserver(resize).observe(container);
 
+  const sunDir = new THREE.Vector3();
+  let shadowHalf = 0;
+  function updateSunShadow() {
+    const sc = sun.shadow.camera;
+    const half = Math.ceil((rig.viewH * Math.max(1, size.w / size.h) * 0.6 + 14) / 8) * 8;
+    sunDir.copy(sunOffset).normalize();
+    const texel = (half * 2) / sun.shadow.mapSize.x;
+    // snap the focus point to the shadow texel grid so shadows don't shimmer while panning
+    const t = rig.target;
+    sun.target.position.set(Math.round(t.x / texel) * texel, Math.round(t.y / texel) * texel, Math.round(t.z / texel) * texel);
+    sun.position.copy(sun.target.position).addScaledVector(sunDir, 160);
+    sun.target.updateMatrixWorld();
+    if (half !== shadowHalf) {
+      shadowHalf = half;
+      sc.left = -half; sc.right = half; sc.top = half; sc.bottom = -half; sc.near = 1; sc.far = 400;
+      sc.updateProjectionMatrix();
+    }
+  }
+
   const updates = new Set();
   function addUpdate(fn) { updates.add(fn); return () => updates.delete(fn); }
 
@@ -239,13 +268,14 @@ export function createScene(container, { bus, clock, world }) {
     for (const fn of [...updates]) {
       try { fn(simDt, clock.t, realDt); } catch (e) { console.error('[update]', e); updates.delete(fn); }
     }
+    updateSunShadow();
     renderer.render(scene, camera);
     labelRenderer.render(scene, camera);
     frames++;
   }
 
   const api = {
-    THREE, scene, renderer, labelRenderer, camera, lights: { ambient, sun }, cam,
+    THREE, scene, renderer, labelRenderer, camera, lights: { ambient, sun, sunOffset }, cam,
     domElement: renderer.domElement, container,
     floorY, addUpdate, pick, resize,
     css2d: (el) => new CSS2DObject(el), // wrap a DOM element as a label object; add it to any Object3D

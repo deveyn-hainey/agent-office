@@ -46,7 +46,7 @@ export class Batch {
     const c = this._c.set(color);
     for (let i = 0; i < p.length / 3; i++) this.col.push(c.r, c.g, c.b);
     g.dispose();
-    if (edges) {
+    if (edges && Batch.OUTLINES) {
       const eg = new T.EdgesGeometry(geometry, threshold);
       eg.applyMatrix4(m);
       const ep = eg.attributes.position.array;
@@ -93,7 +93,7 @@ export class Batch {
 
   get count() { return this.pos.length / 3; }
 
-  build(parent, mat, lineMat, name = 'batch') {
+  build(parent, mat, lineMat, name = 'batch', shadows = true) {
     const T = this.T;
     const out = {};
     if (this.pos.length) {
@@ -104,6 +104,7 @@ export class Batch {
       const mesh = new T.Mesh(g, mat);
       mesh.name = name;
       mesh.userData.noPick = true;
+      mesh.castShadow = shadows; mesh.receiveShadow = shadows;
       parent.add(mesh);
       out.mesh = mesh;
     }
@@ -120,6 +121,8 @@ export class Batch {
     return out;
   }
 }
+
+Batch.OUTLINES = false;   // clean white look: no dark edge outlines
 
 /** tiny deterministic RNG (mulberry32) */
 export function rng(seed) {

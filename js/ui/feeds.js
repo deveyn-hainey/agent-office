@@ -15,7 +15,7 @@ export function createFeeds(ctx, store) {
 
   // ------------------------------------------------------------------ activity log
   const logEl = $('activity-log');
-  logEl.innerHTML = `<header><h3 class="serif">Activity log</h3><span class="live"><i></i>LIVE</span></header><div class="rows" role="log"></div>`;
+  logEl.innerHTML = `<header><h3>Activity</h3></header><div class="rows" role="log"></div>`;
   const rows = logEl.querySelector('.rows');
   const emptyLog = () => { rows.innerHTML = '<div class="empty">Waiting for the team to do something…</div>'; };
   emptyLog();
@@ -24,8 +24,8 @@ export function createFeeds(ctx, store) {
     if (!e) return;
     if (!logCount) rows.innerHTML = '';
     logCount++;
-    const a = store.agent(e.agent) || { short: e.agent === 'you' ? 'You' : String(e.agent || 'Office'), color: '#7a6f60' };
-    const row = h('div.row.k-' + (e.kind || 'log'), { html: `<time>${denverHM(e.ts)}</time> <b style="color:${a.color === '#2f2f35' ? '#2b2622' : a.color}">${esc(a.short)}</b> · <span>${esc(e.text)}</span>` });
+    const a = store.agent(e.agent) || { short: e.agent === 'you' ? 'You' : String(e.agent || 'Office'), color: '#8b9099' };
+    const row = h('div.row.k-' + (e.kind || 'log'), { html: `<time>${denverHM(e.ts)}</time> <b style="color:${a.color === '#2f2f35' ? '#111' : a.color}">${esc(a.short)}</b> · <span>${esc(e.text)}</span>` });
     rows.prepend(row);
     while (rows.children.length > LOG_CAP) rows.lastChild.remove();
   });
@@ -52,7 +52,7 @@ export function createFeeds(ctx, store) {
   const reset = () => { chans = seeds(); unread = {}; active = 'build-room'; };
   reset();
 
-  pane.innerHTML = `<header class="s-head"><div><h3 class="serif">Team chat</h3><span class="ro"><i></i>Scenario replay · read-only</span></div><button class="x" data-s="close" aria-label="Close chat">✕</button></header>
+  pane.innerHTML = `<header class="s-head"><div><h3>Team chat</h3><span class="ro"><i></i>Scenario replay · read-only</span></div><button class="x" data-s="close" aria-label="Close chat">✕</button></header>
     <nav class="tabs" role="tablist"></nav><div class="s-msgs" role="log"></div>
     <footer class="s-foot"><span>🔒 Replay only — nothing here is sent anywhere. Use the command box to talk to the team.</span></footer>`;
   const tabsEl = pane.querySelector('.tabs'), msgsEl = pane.querySelector('.s-msgs');
@@ -68,7 +68,7 @@ export function createFeeds(ctx, store) {
   function msgNode(m, fresh) {
     const a = store.find(m.who);
     const you = m.you || /^you$/i.test(m.who);
-    const ag = a || { id: 'x', short: m.who, name: m.who, color: '#b7ad9b' };
+    const ag = a || { id: 'x', short: m.who, name: m.who, color: '#a7acb4' };
     const tag = a ? ROLE_TAG[a.id] : m.who && /bot|ci/i.test(m.who) ? 'BOT' : '';
     const el = h('div.sm' + (you ? '.you' : '') + (fresh ? '.slide' : ''), {
       html: `${avatarHTML(ag, 30)}<div class="sb"><div class="sh"><b>${esc(a ? a.short : m.who)}</b>${tag ? `<span class="rtag">${tag}</span>` : ''}<time>${denverHM(m.ts)}</time></div><div class="stx">${esc(m.text)}</div><div class="rx"></div></div>`,

@@ -35,28 +35,24 @@ export function isDark(hex) {
 
 // round avatar chip with initials (optionally a status ring colour)
 export function avatarHTML(a, size = 28, ring = '') {
-  const c = a?.color || '#a49d90';
-  return `<span class="av" style="--c:${c};width:${size}px;height:${size}px;font-size:${Math.round(size * 0.38)}px;${ring ? `--ring:${ring};` : ''}color:${isDark(c) ? '#fff' : '#2b2622'}">${esc(initials(a || { id: '?' }))}</span>`;
+  const c = a?.color || '#a7acb4';
+  return `<span class="av" style="--c:${c};width:${size}px;height:${size}px;font-size:${Math.round(size * 0.38)}px;${ring ? `--ring:${ring};` : ''}color:${isDark(c) ? '#fff' : '#111'}">${esc(initials(a || { id: '?' }))}</span>`;
 }
 
-// big meeple portrait (svg) for the desk card
+// status palette for the reskinned UI (green working / orange waiting / red error / grey resting / blue finished)
+export const SC = { working: '#3dba5f', waiting: '#f5a431', error: '#ef4f4f', resting: '#a7acb4', finished: '#3b82f6' };
+
+// big glossy bot blob (svg) for the desk card
 export function meepleSVG(color, state = 'working') {
   const eyes = state === 'resting'
-    ? '<path d="M38 36q3 2 6 0M56 36q3 2 6 0" stroke="#2b2622" stroke-width="2" fill="none" stroke-linecap="round"/>'
-    : '<circle cx="41" cy="36" r="2.4" fill="#2b2622"/><circle cx="59" cy="36" r="2.4" fill="#2b2622"/>';
-  const mouth = state === 'error'
-    ? '<path d="M44 48q6-5 12 0" stroke="#2b2622" stroke-width="2" fill="none" stroke-linecap="round"/>'
-    : '<path d="M44 44q6 5 12 0" stroke="#2b2622" stroke-width="2" fill="none" stroke-linecap="round"/>';
+    ? '<path d="M36 46q4 3 8 0M56 46q4 3 8 0" stroke="#111" stroke-width="2.4" fill="none" stroke-linecap="round"/>'
+    : '<circle cx="40" cy="46" r="3.4" fill="#111"/><circle cx="60" cy="46" r="3.4" fill="#111"/>';
   return `<svg viewBox="0 0 100 110" class="meeple" aria-hidden="true">
-  <ellipse cx="50" cy="104" rx="26" ry="5" fill="rgba(43,38,34,.14)"/>
-  <rect x="33" y="84" width="12" height="18" rx="5" fill="${color}" stroke="#2b2622" stroke-width="2.4"/>
-  <rect x="55" y="84" width="12" height="18" rx="5" fill="${color}" stroke="#2b2622" stroke-width="2.4"/>
-  <rect x="14" y="58" width="14" height="28" rx="7" fill="${color}" stroke="#2b2622" stroke-width="2.4"/>
-  <rect x="72" y="58" width="14" height="28" rx="7" fill="${color}" stroke="#2b2622" stroke-width="2.4"/>
-  <path d="M26 92 V64 q0-14 12-14 h24 q12 0 12 14 V92 q0 6-6 6 H32 q-6 0-6-6z" fill="${color}" stroke="#2b2622" stroke-width="2.4"/>
-  <circle cx="50" cy="34" r="22" fill="${color}" stroke="#2b2622" stroke-width="2.4"/>
-  <ellipse cx="50" cy="38" rx="16" ry="13" fill="#fff6e4" opacity=".92"/>
-  ${eyes}${mouth}
+  <defs><radialGradient id="bg${color.slice(1)}" cx=".35" cy=".28" r=".85"><stop offset="0" stop-color="#fff" stop-opacity=".55"/><stop offset=".45" stop-color="${color}"/><stop offset="1" stop-color="${color}"/></radialGradient></defs>
+  <ellipse cx="50" cy="100" rx="30" ry="6" fill="rgba(0,0,0,.10)"/>
+  <rect x="42" y="84" width="16" height="12" rx="3" fill="#111"/><rect x="26" y="94" width="48" height="6" rx="3" fill="#111"/>
+  <circle cx="50" cy="52" r="38" fill="${color}"/><circle cx="50" cy="52" r="38" fill="url(#bg${color.slice(1)})"/>
+  ${eyes}
 </svg>`;
 }
 

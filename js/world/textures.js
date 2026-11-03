@@ -19,49 +19,25 @@ export function createTextures(THREE) {
   const out = {};
 
   /* ---------- floors ---------- */
-  // wood planks (tile = 8x8 world units)
-  function wood(base, seed, plank = 16) {
+  // clean white floor: very faint tile grid + speckle (tile = 8x8 world units)
+  function clean(base, seed, grid = 64, tint = null) {
     const [c, g] = mk(512, 512);
     const r = rng(seed);
     g.fillStyle = base; g.fillRect(0, 0, 512, 512);
-    const rows = 512 / plank;
-    for (let i = 0; i < rows; i++) {
-      const y = i * plank;
-      g.fillStyle = `rgba(${r() > 0.5 ? '120,80,30' : '255,255,255'},${0.025 + r() * 0.05})`;
-      g.fillRect(0, y, 512, plank);
-      // plank joints
-      let x = r() * 200;
-      while (x < 512) { g.fillStyle = 'rgba(70,45,20,.22)'; g.fillRect(x, y, 1.5, plank); x += 140 + r() * 220; }
-      g.fillStyle = 'rgba(70,45,20,.2)'; g.fillRect(0, y, 512, 1.5);
-    }
+    for (let i = 0; i < 500; i++) { g.fillStyle = `rgba(${r() > 0.5 ? '255,255,255' : '120,124,135'},${0.015 + r() * 0.02})`; g.fillRect(r() * 512, r() * 512, 2 + r() * 3, 2 + r() * 3); }
+    g.strokeStyle = 'rgba(110,116,130,.10)'; g.lineWidth = 1.5;
+    for (let i = 0; i <= 512 / grid; i++) { g.beginPath(); g.moveTo(i * grid, 0); g.lineTo(i * grid, 512); g.moveTo(0, i * grid); g.lineTo(512, i * grid); g.stroke(); }
+    if (tint) { g.fillStyle = tint; g.fillRect(0, 0, 512, 512); }
     return tex(c, { repeat: true });
   }
-  // soft carpet tiles
-  function carpet(base, seed) {
-    const [c, g] = mk(512, 512);
-    const r = rng(seed);
-    g.fillStyle = base; g.fillRect(0, 0, 512, 512);
-    for (let i = 0; i < 1800; i++) { g.fillStyle = `rgba(${r() > 0.5 ? '255,255,255' : '60,60,70'},${0.03 + r() * 0.04})`; g.fillRect(r() * 512, r() * 512, 2 + r() * 3, 2 + r() * 3); }
-    g.strokeStyle = 'rgba(60,70,90,.12)'; g.lineWidth = 2;
-    for (let i = 0; i <= 8; i++) { g.beginPath(); g.moveTo(i * 64, 0); g.lineTo(i * 64, 512); g.moveTo(0, i * 64); g.lineTo(512, i * 64); g.stroke(); }
-    return tex(c, { repeat: true });
-  }
-  // lobby tiles
-  function tiles(a, b) {
-    const [c, g] = mk(512, 512);
-    for (let y = 0; y < 8; y++) for (let x = 0; x < 8; x++) { g.fillStyle = (x + y) % 2 ? a : b; g.fillRect(x * 64, y * 64, 64, 64); }
-    g.strokeStyle = 'rgba(120,90,70,.16)'; g.lineWidth = 2;
-    for (let i = 0; i <= 8; i++) { g.beginPath(); g.moveTo(i * 64, 0); g.lineTo(i * 64, 512); g.moveTo(0, i * 64); g.lineTo(512, i * 64); g.stroke(); }
-    return tex(c, { repeat: true });
-  }
-  out.floor = [tiles('#f8ead9', '#f3e2cc'), carpet('#e3ebf2', 11), carpet('#e2eddf', 12), wood('#efe0c4', 13)];
+  out.floor = [clean('#f6f6f7', 11, 128, 'rgba(243,198,211,.05)'), clean('#f4f5f7', 12, 64, 'rgba(188,214,242,.05)'), clean('#f4f6f5', 13, 64, 'rgba(191,227,198,.05)'), clean('#f6f5f8', 14, 64, 'rgba(205,188,240,.05)')];
 
   /* ---------- desk screens ---------- */
-  const kw = ['#7ee0a0', '#9cc4ff', '#ffb86b', '#e79cff', '#f2f2f2', '#ffd866', '#7fe3e3'];
+  const kw = ['#3ddc84', '#4c8dff', '#ff9f43', '#3ddc84', '#d8dbe2', '#4c8dff', '#8be0b0'];
   out.code = [0, 1, 2].map((v) => {
     const [c, g] = mk(128, 256);
     const r = rng(100 + v * 17);
-    g.fillStyle = '#16202b'; g.fillRect(0, 0, 128, 256);
+    g.fillStyle = '#1a1d24'; g.fillRect(0, 0, 128, 256);
     let y = 6;
     while (y < 250) {
       const indent = Math.floor(r() * 3) * 10;
@@ -82,11 +58,9 @@ export function createTextures(THREE) {
   });
   {
     const [c, g] = mk(128, 80);
-    const gr = g.createLinearGradient(0, 0, 128, 80);
-    gr.addColorStop(0, '#dff0ff'); gr.addColorStop(1, '#c9d9f7');
-    g.fillStyle = gr; g.fillRect(0, 0, 128, 80);
-    g.fillStyle = 'rgba(255,255,255,.7)'; g.fillRect(10, 10, 50, 5); g.fillRect(10, 20, 36, 4);
-    g.fillStyle = 'rgba(80,120,200,.35)'; g.fillRect(70, 14, 44, 44);
+    g.fillStyle = '#1b1e25'; g.fillRect(0, 0, 128, 80);
+    g.fillStyle = 'rgba(255,255,255,.14)'; g.fillRect(10, 12, 40, 4); g.fillRect(10, 22, 28, 3);
+    g.fillStyle = 'rgba(61,220,132,.35)'; g.fillRect(70, 40, 6, 20); g.fillRect(80, 30, 6, 30); g.fillRect(90, 46, 6, 14);
     out.idle = tex(c);
   }
 
@@ -100,8 +74,8 @@ export function createTextures(THREE) {
   /* ---------- wall clock face ---------- */
   {
     const [c, g] = mk(256, 256);
-    g.fillStyle = '#fffdf6'; g.beginPath(); g.arc(128, 128, 126, 0, 7); g.fill();
-    g.fillStyle = '#2b2622';
+    g.fillStyle = '#ffffff'; g.beginPath(); g.arc(128, 128, 126, 0, 7); g.fill();
+    g.fillStyle = '#16171b';
     for (let i = 0; i < 12; i++) {
       const a = (i / 12) * Math.PI * 2;
       const big = i % 3 === 0;
@@ -116,14 +90,12 @@ export function createTextures(THREE) {
   /* ---------- chalk menu for the coffee bar ---------- */
   {
     const [c, g] = mk(256, 160);
-    g.fillStyle = '#2e4a3f'; g.fillRect(0, 0, 256, 160);
-    g.strokeStyle = 'rgba(255,255,255,.55)'; g.lineWidth = 3; g.setLineDash([8, 5]); g.strokeRect(8, 8, 240, 144);
-    g.setLineDash([]);
-    g.fillStyle = '#fff6d8'; g.font = 'bold 30px "Segoe Print","Bradley Hand","Comic Sans MS",cursive'; g.textAlign = 'center';
-    g.fillText('Coffee Bar', 128, 46);
-    g.font = '19px "Segoe Print","Bradley Hand","Comic Sans MS",cursive'; g.textAlign = 'left'; g.fillStyle = '#e9f2ff';
+    g.fillStyle = '#ffffff'; g.fillRect(0, 0, 256, 160);
+    g.fillStyle = '#16171b'; g.font = '700 28px Inter,system-ui,sans-serif'; g.textAlign = 'center';
+    g.fillText('Coffee Bar', 128, 44);
+    g.font = '500 18px Inter,system-ui,sans-serif'; g.textAlign = 'left'; g.fillStyle = '#55585f';
     g.fillText('espresso', 26, 78); g.fillText('latte', 26, 104); g.fillText('cold brew', 26, 130);
-    g.textAlign = 'right'; g.fillStyle = '#ffd37a';
+    g.textAlign = 'right'; g.fillStyle = '#16171b';
     g.fillText('2', 232, 78); g.fillText('3', 232, 104); g.fillText('3', 232, 130);
     out.menu = tex(c);
   }
@@ -137,16 +109,16 @@ export function createTextures(THREE) {
     g.fillStyle = b; g.fillRect(14, 120 + r() * 14, 132, 18 + r() * 12);
     g.fillStyle = c2;
     g.beginPath(); g.moveTo(10, 190); g.lineTo(60 + r() * 30, 130); g.lineTo(150, 190); g.closePath(); g.fill();
-    g.fillStyle = '#2b2622'; g.font = 'bold 15px Georgia,serif'; g.textAlign = 'center';
+    g.fillStyle = '#16171b'; g.font = '700 15px Inter,system-ui,sans-serif'; g.textAlign = 'center';
     g.fillText(title, 80, 24);
     g.fillStyle = 'rgba(43,38,34,.55)'; g.fillRect(34, 200, 92, 4);
     return tex(c);
   }
   out.posters = [
-    poster(1, '#fdf1dc', '#f5a3b5', '#9bd0f0', '#f6d66b', 'GAME DAY'),
-    poster(2, '#e6f1ff', '#ffb36b', '#b9e0a8', '#8fa6f2', 'ODDS'),
-    poster(3, '#fff0f4', '#a98be0', '#f7c3d0', '#7ccfb0', 'PITCHSIDE'),
-    poster(4, '#f1f7e6', '#6bbf8a', '#ffd776', '#e88a7a', 'SHIP IT'),
+    poster(1, '#ffffff', '#4c8dff', '#e8eaee', '#ffc53d', 'GAME DAY'),
+    poster(2, '#f6f7f9', '#ff9f43', '#dfe3e8', '#4c8dff', 'ODDS'),
+    poster(3, '#ffffff', '#a78bfa', '#e8eaee', '#34c759', 'PITCHSIDE'),
+    poster(4, '#f6f7f9', '#34c759', '#dfe3e8', '#ff6b6b', 'SHIP IT'),
   ];
 
   /* ---------- mini whiteboard doodles (easel boards) ---------- */
@@ -157,8 +129,23 @@ export function createTextures(THREE) {
     g.strokeStyle = '#3d7be0'; g.beginPath(); g.moveTo(24, 40); g.bezierCurveTo(70, 10, 110, 60, 160, 28); g.stroke();
     g.strokeStyle = '#e25a4f'; g.strokeRect(30, 70, 70, 44); g.beginPath(); g.moveTo(100, 92); g.lineTo(150, 92); g.lineTo(142, 84); g.moveTo(150, 92); g.lineTo(142, 100); g.stroke();
     g.strokeStyle = '#3fae5a'; g.beginPath(); g.arc(190, 98, 24, 0, 7); g.stroke();
-    g.strokeStyle = '#2b2622'; g.beginPath(); g.moveTo(30, 140); g.lineTo(100, 140); g.moveTo(30, 156); g.lineTo(160, 156); g.stroke();
+    g.strokeStyle = '#16171b'; g.beginPath(); g.moveTo(30, 140); g.lineTo(100, 140); g.moveTo(30, 156); g.lineTo(160, 156); g.stroke();
     out.easel = tex(c);
+  }
+
+  /* ---------- wall TV: dark screen, big number, green line chart + blue bars (classic look) ---------- */
+  {
+    const [c, g] = mk(512, 288);
+    g.fillStyle = '#16181d'; g.fillRect(0, 0, 512, 288);
+    g.fillStyle = '#ffffff'; g.font = '700 38px Inter,system-ui,sans-serif'; g.fillText('1,051', 28, 62);
+    g.fillStyle = '#7a7f8a'; g.font = '500 16px Inter,system-ui,sans-serif'; g.fillText('visits today', 30, 88);
+    g.strokeStyle = '#3ddc84'; g.lineWidth = 4; g.lineJoin = 'round'; g.beginPath();
+    const pts = [0.7, 0.6, 0.65, 0.5, 0.55, 0.4, 0.5, 0.58, 0.35, 0.45, 0.3, 0.38];
+    pts.forEach((v, i) => { const x = 28 + (i / (pts.length - 1)) * 300, y = 120 + v * 150; i ? g.lineTo(x, y) : g.moveTo(x, y); });
+    g.stroke();
+    g.fillStyle = '#3b82f6';
+    for (let i = 0; i < 9; i++) { const bh = 30 + ((i * 37) % 70); g.fillRect(350 + i * 16, 262 - bh, 10, bh); }
+    out.tv = tex(c);
   }
 
   /* ---------- rack LED panel (animated by props) ---------- */

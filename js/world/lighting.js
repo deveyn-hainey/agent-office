@@ -4,19 +4,18 @@ const bump = (h, c, w) => Math.max(0, 1 - Math.abs(h - c) / w);
 
 export function createLighting(env) {
   const { T, scene3, lights, tex, floorMats } = env;
-  const hemi = new T.HemisphereLight('#ffffff', '#e8dcc4', 1.25);
+  const hemi = new T.HemisphereLight('#ffffff', '#d9dce3', 1.7);
   hemi.name = 'hemi';
   scene3.add(hemi);
-  lights.ambient.intensity = 1.0;
-  lights.sun.intensity = 1.0;
-  lights.sun.position.set(30, 60, 24);
+  lights.ambient.intensity = 0.3;
+  lights.sun.intensity = 1.3;
 
   const C = (h) => new T.Color(h);
-  const cA = { day: C('#ffffff'), warm: C('#ffdcc0'), night: C('#8e9bd2') };
-  const cS = { day: C('#fff4e0'), warm: C('#ff9f63'), night: C('#8196df') };
-  const cHs = { day: C('#ffffff'), warm: C('#ffe2cc'), night: C('#9aa9e6') };
-  const cHg = { day: C('#e8dcc4'), warm: C('#d9b99a'), night: C('#645f86') };
-  const cBg = { day: C('#f4ecdc'), warm: C('#f3dfc8'), night: C('#c7c5d8') };
+  const cA = { day: C('#ffffff'), warm: C('#fff0e4'), night: C('#8e9bd2') };
+  const cS = { day: C('#ffffff'), warm: C('#ffe6d0'), night: C('#8fa2e8') };
+  const cHs = { day: C('#ffffff'), warm: C('#fff3ea'), night: C('#8c9cdc') };
+  const cHg = { day: C('#d9dce3'), warm: C('#e4d8d0'), night: C('#4a5070') };
+  const cBg = { day: C('#ffffff'), warm: C('#fff7f0'), night: C('#262c40') };
   const tmp = new T.Color();
   const mix3 = (o, d, w, n, out) => { out.copy(o.day).lerp(o.night, n); if (w > 0) out.lerp(o.warm, w); return out; };
 
@@ -24,8 +23,8 @@ export function createLighting(env) {
 
   function skyDraw(h, d, warm, n) {
     const g = env.tex.skyCtx, W = 64, H = 128;
-    const top = new T.Color('#7ec2f2').lerp(new T.Color('#0d1633'), n);
-    const bot = new T.Color('#d8eeff').lerp(new T.Color('#2a3b72'), n);
+    const top = new T.Color('#cfe6f5').lerp(new T.Color('#0d1633'), n);
+    const bot = new T.Color('#f2f8fc').lerp(new T.Color('#2a3b72'), n);
     if (warm > 0) { top.lerp(new T.Color('#e9a0a8'), warm * 0.55); bot.lerp(new T.Color('#ffd09a'), warm * 0.9); }
     const gr = g.createLinearGradient(0, 0, 0, H);
     gr.addColorStop(0, '#' + top.getHexString()); gr.addColorStop(1, '#' + bot.getHexString());
@@ -48,18 +47,19 @@ export function createLighting(env) {
     const n = 1 - d;
     const warm = Math.max(bump(h, 18.4, 1.6) * 0.95, bump(h, 6.3, 1.0) * 0.8) * (d > 0.02 ? 1 : 0.6);
     st.d = d; st.n = n; st.warm = warm; st.hours = h;
-    mix3(cA, null, warm, n, lights.ambient.color); lights.ambient.intensity = 1.0 - 0.22 * n;
-    mix3(cS, null, warm, n, lights.sun.color); lights.sun.intensity = 0.35 + 0.75 * d + 0.25 * warm;
+    mix3(cA, null, warm, n, lights.ambient.color); lights.ambient.intensity = 0.3 + 0.1 * n;
+    mix3(cS, null, warm, n, lights.sun.color); lights.sun.intensity = 0.3 + 1.0 * d + 0.12 * warm;
     // evening sun is lower / from the left; night "moon" from above-left
     const az = 0.2 + (1 - d) * 0.5 + warm * 0.25;
-    lights.sun.position.set(30 + Math.sin(az) * 30 - 10, 50 + 10 * d, 24);
-    mix3(cHs, null, warm, n, hemi.color); mix3(cHg, null, warm, n, hemi.groundColor); hemi.intensity = 1.25 - 0.3 * n;
+    lights.sunOffset?.set(-26 - Math.sin(az) * 14 + 8, 60 + 10 * d, 34);
+    mix3(cHs, null, warm, n, hemi.color); mix3(cHg, null, warm, n, hemi.groundColor); hemi.intensity = 1.7 - 0.9 * n;
     mix3(cBg, null, warm * 0.8, n, tmp);
     scene3.background.copy(tmp);
     if (env.renderer) env.renderer.setClearColor(tmp, 1);
     for (const m of floorMats) {
-      m.lampPool.opacity = Math.min(0.7, n * 1.0 + warm * 0.2) * 0.75;
-      m.patch.opacity = d * (1 - warm * 0.4) * 0.1;
+      m.lampPool.opacity = Math.min(0.8, n * 1.1 + warm * 0.1) * 0.85;
+      m.nightGlow = n; m.screenGlow?.(n);
+      m.patch.opacity = d * (1 - warm * 0.4) * 0.04;
       m.patch.color.set('#fff2c4').lerp(new T.Color('#ffc78a'), warm);
     }
     if (Math.abs(h - st.lastSky) > 0.012) { st.lastSky = h; skyDraw(h, d, warm, n); }

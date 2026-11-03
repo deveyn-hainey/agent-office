@@ -1,5 +1,5 @@
 // Bottom nav, replay transport, command box, drawers, keyboard shortcuts and camera insets.
-import { esc, mmss } from '../core/util.js';
+import { esc, mmss, denverHM } from '../core/util.js';
 import { $, h, trapKeys } from './dom.js';
 
 const SCEN = [
@@ -24,8 +24,7 @@ export function createControls(ctx, store, api, panels, feeds) {
   const nav = $('bottom-nav');
   nav.innerHTML = `<button data-v="all" title="All floors (A)">All floors</button>
     <span class="grp"><button data-d="-1" title="Floor down" aria-label="Previous floor">‹</button>${[1, 2, 3, 4].map((n) => `<button class="fl" data-f="${n - 1}" title="${n}F (${n})">${n}F</button>`).join('')}<button data-d="1" title="Floor up" aria-label="Next floor">›</button></span>
-    <button data-v="clean" title="Clean view (C)">Clean view</button>
-    <span class="grp"><button data-z="0.8" title="Zoom out" aria-label="Zoom out">−</button><button data-z="1.25" title="Zoom in" aria-label="Zoom in">+</button></span>
+    <button data-v="clean" title="Clean view (C)">Clean</button>
     <span class="sepv"></span>
     <button data-t="chat" title="Team chat (S)">💬 Chat<i class="bdg" hidden></i></button>
     <button data-t="map" title="Project map (M)">🗺 Map</button>`;
@@ -33,6 +32,7 @@ export function createControls(ctx, store, api, panels, feeds) {
     const b = e.target.closest('button'); if (!b) return;
     const c = cam(); if (!c) return;
     if (b.dataset.v || b.dataset.f != null || b.dataset.d || b.dataset.z) c.markUser?.();
+    if (b.dataset.t) stopTour();
     if (b.dataset.v === 'all') c.setView('all');
     else if (b.dataset.v === 'clean') c.setClean(!c.isClean());
     else if (b.dataset.f != null) c.setView({ type: 'floor', floor: +b.dataset.f });
@@ -41,6 +41,56 @@ export function createControls(ctx, store, api, panels, feeds) {
     else if (b.dataset.t === 'chat') feeds.slack.toggle();
     else if (b.dataset.t === 'map') api.openProjectMap();
   });
+  const zoomBox = $('zoom-box');
+  zoomBox.innerHTML = '<button data-z="1.25" title="Zoom in" aria-label="Zoom in">+</button><button data-z="0.8" title="Zoom out" aria-label="Zoom out">−</button>';
+  zoomBox.addEventListener('click', (e) => { const b = e.target.closest('[data-z]'); if (!b) return; cam()?.markUser?.(); cam()?.zoomBy(+b.dataset.z); });
+
+  // ------------------------------------------------------------------ brand card: logo, live clock, Day / Night / Tour
+  const brand = $('brand-card');
+  brand.innerHTML = `<div class="bc-brand"><span class="logo"><i></i></span><div class="bc-t"><b>Office Bot</b><span class="live"><i></i>Live · <time>${denverHM(Date.now())}</time></span></div></div>
+    <div class="bc-btns"><button data-bc="day" title="Daytime lighting">☀ Day</button><button data-bc="night" title="Night lighting">☾ Night</button><button data-bc="tour" title="Slow tour through the floors">▶ Tour</button></div>`;
+  const clockEl = brand.querySelector('time');
+  setInterval(() => { clockEl.textContent = denverHM(Date.now()); }, 15000);
+  const lightNight = () => !!ctx.world?.lighting?.isNight?.();
+  function paintTod() {
+    const n = lightNight();
+    brand.querySelector('[data-bc=day]').classList.toggle('on', !n);
+    brand.querySelector('[data-bc=night]').classList.toggle('on', n);
+  }
+  setInterval(paintTod, 4000);
+  // tour: dwell on each floor top to bottom, then pull back; any user input stops it
+  let tour = null;
+  const tourViews = [{ type: 'floor', floor: 3 }, { type: 'floor', floor: 2 }, { type: 'floor', floor: 1 }, { type: 'floor', floor: 0 }, 'all'];
+  function stopTour() {
+    if (!tour) return;
+    clearTimeout(tour.t); tour = null;
+    const b = brand.querySelector('[data-bc=tour]'); b.classList.remove('on'); b.textContent = '▶ Tour';
+  }
+  function tourStep() {
+    if (!tour) return;
+    const v = tourViews[tour.i++ % tourViews.length];
+    tour.setting = true; cam()?.setView(v, { duration: 1.8 }); tour.setting = false;
+    tour.t = setTimeout(tourStep, 5200);
+  }
+  function startTour() {
+    tour = { i: 0, t: 0, setting: false };
+    const b = brand.querySelector('[data-bc=tour]'); b.classList.add('on'); b.textContent = '■ Stop';
+    cam()?.setClean(false);
+    tourStep();
+  }
+  bus.on('cam:view', () => { if (tour && !tour.setting) stopTour(); });
+  $('stage').addEventListener('pointerdown', stopTour);
+  $('stage').addEventListener('wheel', stopTour, { passive: true });
+  brand.addEventListener('click', (e) => {
+    const b = e.target.closest('[data-bc]'); if (!b) return;
+    const k = b.dataset.bc;
+    if (k === 'tour') { if (tour) stopTour(); else startTour(); return; }
+    ctx.world?.setTimeOfDay?.(k === 'day' ? 12 : 22);
+    paintTod();
+  });
+  bus.on('routine:toggle', () => setTimeout(paintTod, 50));
+  setTimeout(paintTod, 600);
+
   function markNav() {
     const v = cam()?.getView?.() || { type: 'all' };
     nav.querySelector('[data-v=all]').classList.toggle('on', v.type === 'all');
@@ -59,7 +109,7 @@ export function createControls(ctx, store, api, panels, feeds) {
     <div class="scrub"><div class="ticks"></div><input type="range" min="0" max="1" step="0.1" value="0" aria-label="Scenario progress"><span class="chap"></span></div>
     <span class="rtime">0:00 / 0:00</span>
     <span class="spd">${[1, 2, 4].map((s) => `<button data-sp="${s}">${s}×</button>`).join('')}</span>
-    <button class="demo-btn" data-r="demo" title="Run the full demo hands-free">✨ Demo mode</button>`;
+    <button class="demo-btn" data-r="demo" title="Run the full demo hands-free">Demo mode</button>`;
   const pick = rc.querySelector('select'), playB = rc.querySelector('.play'), range = rc.querySelector('input'), ticks = rc.querySelector('.ticks'), rtime = rc.querySelector('.rtime'), chapEl = rc.querySelector('.chap');
   let chapters = [], duration = 0, scrubbing = false, demo = false;
 
@@ -151,7 +201,7 @@ export function createControls(ctx, store, api, panels, feeds) {
   const cmd = $('command-box');
   cmd.innerHTML = `<div class="hist" aria-live="polite"></div>
     <div class="chips">${SUGGEST.map((s) => `<button type="button" class="sug" data-sug="${esc(s)}">${esc(s.length > 34 ? s.slice(0, 33) + '…' : s)}</button>`).join('')}</div>
-    <div class="crow"><span class="prompt">›</span><input id="command-input" aria-label="Command" placeholder="Tell the team… e.g. 'tell Muse to draw the bet365 logo on the lobby wall'" maxlength="240"><button class="btn primary" type="submit">Send</button></div>`;
+    <div class="crow"><input id="command-input" aria-label="Command" placeholder="Tell the team… e.g. 'tell Muse to draw the bet365 logo on the lobby wall'" maxlength="240"><button class="btn primary" type="submit">Send</button></div>`;
   const input = cmd.querySelector('input'), hist = cmd.querySelector('.hist');
   trapKeys(input);
   const past = []; let pi = 0;
@@ -183,13 +233,15 @@ export function createControls(ctx, store, api, panels, feeds) {
 
   // ------------------------------------------------------------------ drawers (< 1100px)
   const dt = $('drawer-toggles');
-  dt.innerHTML = `<button data-dr="left" aria-label="Floors and approvals">☰ Floors</button><button data-dr="right" aria-label="Bots and activity">Bots ☰</button>`;
+  dt.innerHTML = `<button data-dr="left">Status</button><button data-dr="right">Agents</button><button data-dr="activity">Activity</button>`;
   dt.addEventListener('click', (e) => {
     const b = e.target.closest('[data-dr]'); if (!b) return;
-    const cls = 'drawer-' + b.dataset.dr, other = 'drawer-' + (b.dataset.dr === 'left' ? 'right' : 'left');
-    body.classList.remove(other); body.classList.toggle(cls); bus.emit('ui:layout', {});
+    const cls = 'drawer-' + b.dataset.dr;
+    const was = body.classList.contains(cls);
+    body.classList.remove('drawer-left', 'drawer-right', 'drawer-activity'); if (!was) body.classList.add(cls); bus.emit('ui:layout', {});
   });
   $('left-col').addEventListener('click', (e) => { if (innerWidth < 1100 && e.target.closest('[data-floor],[data-ask]')) { body.classList.remove('drawer-left'); } });
+  $('needs-card').addEventListener('click', () => body.classList.remove('drawer-left', 'drawer-right', 'drawer-activity'));
   $('right-col').addEventListener('click', (e) => { if (innerWidth < 1100 && e.target.closest('[data-agent]')) { body.classList.remove('drawer-right'); } });
 
   // ------------------------------------------------------------------ keyboard
@@ -209,7 +261,7 @@ export function createControls(ctx, store, api, panels, feeds) {
     else if (k === 'Escape') {
       if (api.escape?.()) return;
       const v = c?.getView?.();
-      if (body.classList.contains('drawer-left') || body.classList.contains('drawer-right')) body.classList.remove('drawer-left', 'drawer-right');
+      if (/drawer-/.test(body.className)) body.classList.remove('drawer-left', 'drawer-right', 'drawer-activity');
       else if (v?.type === 'desk') api.closeDeskView();
       else if (v?.type === 'floor') c.setView('all');
       else if (c?.isClean?.()) c.setClean(false);
@@ -227,10 +279,13 @@ export function createControls(ctx, store, api, panels, feeds) {
     } else {
       const W = innerWidth, H = innerHeight, wide = W >= 1100;
       const r = (el) => (el && el.offsetParent !== null ? el.getBoundingClientRect() : null);
-      const cmdR = r(cmd), navR = r(nav), rcR = r(rc), pillR = r($('top-pill'));
-      ins.top = Math.round(Math.max(rcR?.bottom || 0, pillR?.bottom || 0) + 6);
+      const hint = $('controls-hint'), needsEl = $('needs-card');
+      const lowest = (...els) => Math.max(0, ...els.map((e) => r(e)?.bottom || 0));
+      const topmost = (...els) => Math.min(H, ...els.map((e) => r(e)?.top ?? H));
+      ins.top = Math.round(lowest($('top-pill'), needsEl, wide ? null : brand) + 6);
+      const cmdR = r(cmd);
       const cmdTop = cmdR ? cmdR.top + (hist.offsetHeight ? hist.offsetHeight + 6 : 0) : H; // command history rows float above; don't re-fit for them
-      ins.bottom = Math.round(H - Math.min(cmdTop, navR?.top ?? H) + 6);
+      ins.bottom = Math.round(H - Math.min(cmdTop, topmost(nav, hint, rc, wide ? null : dt)) + 6);
       if (wide) {
         const l = r($('left-panel')), rp = r($('right-col')), sl = body.classList.contains('slack-open') ? r($('slack-col')) : null;
         ins.left = Math.round((l?.right || 0) + 8);
@@ -249,7 +304,7 @@ export function createControls(ctx, store, api, panels, feeds) {
   const soon = () => setTimeout(applyInsets, 0);
   addEventListener('resize', soon);
   ['cam:clean', 'ui:layout', 'app:ready', 'cam:view'].forEach((e) => bus.on(e, soon));
-  if (window.ResizeObserver) { const ro = new ResizeObserver(soon); [cmd, rc, $('top-pill'), $('left-panel')].forEach((el) => el && ro.observe(el)); }
+  if (window.ResizeObserver) { const ro = new ResizeObserver(soon); [cmd, rc, $('top-pill'), $('needs-card'), $('left-panel')].forEach((el) => el && ro.observe(el)); }
   soon();
   setTimeout(applyInsets, 400);
 

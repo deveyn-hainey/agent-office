@@ -1,6 +1,6 @@
 // Elevator shaft/car/hall doors/indicator and zig-zag stairs. Same x/z on every floor.
 
-const METAL = '#d9dde3', METAL_D = '#aeb4bd', FRAME = '#4a5560';
+const METAL = '#eef0f3', METAL_D = '#c9ced6', FRAME = '#f4f5f7';
 export const STAIR = { flights: 7, rise: 4, xA: 10.5, xB: 14.5, laneA: -9.6, laneB: -12.2 };
 
 export function buildCore(env) {
@@ -16,10 +16,10 @@ export function buildCore(env) {
   // corner posts
   for (const [px, pz] of [[x0, z0], [x1, z0], [x0, z1], [x1, z1]]) b.box(0.28, top, 0.28, FRAME, px, top / 2, pz);
   // glass on -x/+x faces, back face, and front face above hall level
-  glassB.box(0.05, top - 0.3, el.d - 0.3, '#cfeaf4', x1, top / 2, el.z, 0, false);
-  glassB.box(0.05, top - 0.3, el.d - 0.3, '#cfeaf4', x0, top / 2, el.z, 0, false);
-  glassB.box(el.w - 0.3, top - 0.3, 0.05, '#cfeaf4', el.x, top / 2, z0, 0, false);
-  if (floor < nF - 1) glassB.box(el.w - 0.3, P - H - 0.3, 0.05, '#cfeaf4', el.x, H + (P - H) / 2, z1, 0, false);
+  glassB.box(0.05, top - 0.3, el.d - 0.3, '#d6ecf5', x1, top / 2, el.z, 0, false);
+  glassB.box(0.05, top - 0.3, el.d - 0.3, '#d6ecf5', x0, top / 2, el.z, 0, false);
+  glassB.box(el.w - 0.3, top - 0.3, 0.05, '#d6ecf5', el.x, top / 2, z0, 0, false);
+  if (floor < nF - 1) glassB.box(el.w - 0.3, P - H - 0.3, 0.05, '#d6ecf5', el.x, H + (P - H) / 2, z1, 0, false);
   // horizontal rails at every ~3.5 so the tall glass tube reads as a structure
   for (let y = 3.5; y < top - 0.2; y += 3.5) {
     b.box(0.12, 0.1, el.d, FRAME, x1, y, el.z, 0, false);
@@ -35,11 +35,11 @@ export function buildCore(env) {
   b.box(stile, H, 0.22, METAL, x1 - stile / 2, H / 2, z1);
   b.box(doorW + 0.02, H - doorH, 0.22, METAL, el.x, doorH + (H - doorH) / 2, z1);
   b.box(doorW + 0.5, 0.12, 0.3, FRAME, el.x, doorH + 0.06, z1 + 0.02);
-  b.box(doorW + 0.4, 0.05, 0.4, '#2b2f36', el.x, 0.03, z1 + 0.05, 0, false);   // sill
+  b.box(doorW + 0.4, 0.05, 0.4, '#c9ccd2', el.x, 0.03, z1 + 0.05, 0, false);   // sill
   // call button panel
-  b.box(0.22, 0.5, 0.06, '#2b2f36', x1 + 0.05 - 0.55 - stile + 0.6, 1.8, z1 + 0.14, 0, false);
-  b.box(0.1, 0.1, 0.05, '#ffcf4a', x1 + 0.05 - 0.55 - stile + 0.6, 1.9, z1 + 0.18, 0, false);
-  b.box(0.1, 0.1, 0.05, '#7ee0a0', x1 + 0.05 - 0.55 - stile + 0.6, 1.7, z1 + 0.18, 0, false);
+  b.box(0.22, 0.5, 0.06, '#16171b', x1 + 0.05 - 0.55 - stile + 0.6, 1.8, z1 + 0.14, 0, false);
+  b.box(0.1, 0.1, 0.05, '#ff9f0a', x1 + 0.05 - 0.55 - stile + 0.6, 1.9, z1 + 0.18, 0, false);
+  b.box(0.1, 0.1, 0.05, '#34c759', x1 + 0.05 - 0.55 - stile + 0.6, 1.7, z1 + 0.18, 0, false);
 
   /* ---------- hall doors (2 sliding panels) ---------- */
   const halfW = doorW / 2;
@@ -48,9 +48,8 @@ export function buildCore(env) {
     const m = new T.Mesh(new T.BoxGeometry(halfW - 0.02, doorH, 0.1), mats.metal);
     m.position.set(el.x + sgn * halfW / 2, doorH / 2, z1 - 0.02);
     m.userData.noPick = true;
-    const ln = new T.LineSegments(new T.EdgesGeometry(m.geometry), env.lineMat);
-    m.add(ln);
-    const win = new T.Mesh(new T.PlaneGeometry(0.34, 1.0), new T.MeshBasicMaterial({ color: '#bfe3f0' }));
+    m.castShadow = true;
+    const win = new T.Mesh(new T.PlaneGeometry(0.34, 1.0), new T.MeshBasicMaterial({ color: '#dbeaf2' }));
     win.position.set(-sgn * 0.12, 0.45, 0.06); m.add(win);
     group.add(m);
     hallDoors.push({ m, closedX: m.position.x, sgn });
@@ -64,15 +63,15 @@ export function buildCore(env) {
   ind.position.set(el.x, H - 0.75, z1 + 0.125); ind.userData.noPick = true;
   group.add(ind);
   const drawInd = (carFloor, moving) => {
-    ictx.fillStyle = '#20252c'; ictx.fillRect(0, 0, 256, 64);
-    ictx.font = 'bold 36px ui-sans-serif,system-ui,sans-serif'; ictx.textAlign = 'center'; ictx.textBaseline = 'middle';
+    ictx.fillStyle = '#16171b'; ictx.fillRect(0, 0, 256, 64);
+    ictx.font = '700 34px Inter,system-ui,sans-serif'; ictx.textAlign = 'center'; ictx.textBaseline = 'middle';
     for (let i = 0; i < nF; i++) {
       const on = i === carFloor;
-      ictx.fillStyle = on ? '#ffcf4a' : '#4a4f58';
-      if (on) { ictx.beginPath(); ictx.arc(34 + i * 62, 34, 24, 0, 7); ictx.fill(); ictx.fillStyle = '#20252c'; }
+      ictx.fillStyle = on ? '#34c759' : '#5b606b';
+      if (on) { ictx.beginPath(); ictx.arc(34 + i * 62, 34, 24, 0, 7); ictx.fill(); ictx.fillStyle = '#ffffff'; }
       ictx.fillText(String(i + 1), 34 + i * 62, 36);
     }
-    if (moving) { ictx.fillStyle = '#7ee0a0'; ictx.fillRect(0, 60, 256, 4); }
+    if (moving) { ictx.fillStyle = '#4c8dff'; ictx.fillRect(0, 60, 256, 4); }
     itex.needsUpdate = true;
   };
   drawInd(0, false);
@@ -82,7 +81,7 @@ export function buildCore(env) {
   const treadsPer = 8, run = (xB - xA) / treadsPer;
   const laneW = 1.5;
   if (floor < nF - 1) {
-    const col = '#c9a878', colD = '#a98963', rail = '#5d646e';
+    const col = '#f1f2f4', colD = '#d3d5da', rail = '#ffffff';
     for (let k = 0; k < flights; k++) {
       const even = k % 2 === 0;
       const lane = even ? laneA : laneB;
@@ -91,7 +90,7 @@ export function buildCore(env) {
       const yb = k * rise;
       for (let i = 0; i < treadsPer; i++) {
         const cx = xs + dir * (i + 0.5) * run;
-        b.box(run + 0.02, 0.16, laneW, i % 2 ? col : '#d2b387', cx, yb + (i + 1) * (rise / treadsPer) - 0.08, lane);
+        b.box(run + 0.02, 0.16, laneW, i % 2 ? col : '#e7e8eb', cx, yb + (i + 1) * (rise / treadsPer) - 0.08, lane);
       }
       // stringers (sloped)
       const len = Math.hypot(xB - xA, rise), ang = Math.atan2(rise, xB - xA);
@@ -106,15 +105,15 @@ export function buildCore(env) {
       }
       // landing at the end of the flight (spans both lanes)
       const lx = even ? xB + 0.25 : xA - 0.25;
-      b.box(0.5, 0.2, laneA - laneB + laneW, '#cdb48c', lx, yb + rise - 0.1, (laneA + laneB) / 2);
+      b.box(0.5, 0.2, laneA - laneB + laneW, '#e4e5e8', lx, yb + rise - 0.1, (laneA + laneB) / 2);
     }
     // starting landing + top exit pad
-    b.box(0.5, 0.2, laneW, '#cdb48c', xA - 0.25, -0.1, laneA);
-    b.box(1.6, 0.14, 2.3, '#cdb48c', xB - 0.2, P - 0.07 - 0.02, laneA + 0.6);
+    b.box(0.5, 0.2, laneW, '#e4e5e8', xA - 0.25, -0.1, laneA);
+    b.box(1.6, 0.14, 2.3, '#e4e5e8', xB - 0.2, P - 0.07 - 0.02, laneA + 0.6);
   }
   // safety rail around the stairwell hole on floors that receive stairs
   if (floor > 0) {
-    const rail = '#5d646e';
+    const rail = '#ffffff';
     const hx0 = st.x - st.w / 2, hx1 = st.x + st.w / 2, hz1 = st.z + st.d / 2 - 0.0;
     b.box(hx1 - hx0 - 2.2, 0.06, 0.06, rail, (hx0 + hx1 - 2.2) / 2 - 0.0, 1.0, hz1 + 0.05, 0, false);
     for (let x = hx0 + 0.1; x < hx1 - 2.2; x += 1.0) b.box(0.05, 1.0, 0.05, rail, x, 0.5, hz1 + 0.05, 0, false);
@@ -134,28 +133,27 @@ export function createElevator(env) {
   car.userData.noPick = true;
   const cw = 3.7, cd = 3.7, ch = 3.45;
   const ob = new env.Batch(T);
-  ob.box(cw, 0.2, cd, '#c9b08a', 0, -0.08, 0);
-  ob.box(cw, 0.16, cd, '#e9eef3', 0, ch, 0);
-  ob.box(cw - 0.2, 0.06, cd - 0.2, '#fff6cf', 0, ch - 0.11, 0, 0, false);
-  for (const [px, pz] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) ob.box(0.14, ch, 0.14, '#4a5560', px * cw / 2, ch / 2, pz * cd / 2);
-  ob.box(cw - 0.1, ch - 0.3, 0.1, '#e8d9bd', 0, ch / 2, -cd / 2 + 0.05);
-  ob.box(cw - 0.5, 0.08, 0.12, '#8d949e', 0, 1.0, -cd / 2 + 0.17, 0, false);
-  ob.box(0.1, 0.1, cd - 0.3, '#8d949e', -cw / 2 + 0.2, 1.0, 0, 0, false);
-  ob.box(0.1, 0.1, cd - 0.3, '#8d949e', cw / 2 - 0.2, 1.0, 0, 0, false);
-  ob.box(0.5, 0.26, 0.05, '#20252c', cw / 2 - 0.5, 2.0, cd / 2 - 0.05, 0, false);
-  const carMats = { vc: new T.MeshLambertMaterial({ vertexColors: true }), glass: new T.MeshLambertMaterial({ vertexColors: true, transparent: true, opacity: 0.22, depthWrite: false }) };
+  ob.box(cw, 0.2, cd, '#e4e5e8', 0, -0.08, 0);
+  ob.box(cw, 0.16, cd, '#ffffff', 0, ch, 0);
+  ob.box(cw - 0.2, 0.06, cd - 0.2, '#fffbe8', 0, ch - 0.11, 0, 0, false);
+  for (const [px, pz] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) ob.box(0.14, ch, 0.14, '#f4f5f7', px * cw / 2, ch / 2, pz * cd / 2);
+  ob.box(cw - 0.1, ch - 0.3, 0.1, '#e9eaed', 0, ch / 2, -cd / 2 + 0.05);
+  ob.box(cw - 0.5, 0.08, 0.12, '#c9ced6', 0, 1.0, -cd / 2 + 0.17, 0, false);
+  ob.box(0.1, 0.1, cd - 0.3, '#c9ced6', -cw / 2 + 0.2, 1.0, 0, 0, false);
+  ob.box(0.1, 0.1, cd - 0.3, '#c9ced6', cw / 2 - 0.2, 1.0, 0, 0, false);
+  ob.box(0.5, 0.26, 0.05, '#16171b', cw / 2 - 0.5, 2.0, cd / 2 - 0.05, 0, false);
+  const carMats = { vc: new T.MeshStandardMaterial({ vertexColors: true, roughness: 0.6 }), glass: new T.MeshStandardMaterial({ vertexColors: true, transparent: true, opacity: 0.2, roughness: 0.1, depthWrite: false }) };
   ob.build(car, carMats.vc, env.carLineMat, 'car');
   const gb = new env.Batch(T);
-  gb.box(0.05, ch - 0.3, cd - 0.3, '#cfeaf4', -cw / 2 + 0.03, ch / 2, 0, 0, false);
-  gb.box(0.05, ch - 0.3, cd - 0.3, '#cfeaf4', cw / 2 - 0.03, ch / 2, 0, 0, false);
-  gb.build(car, carMats.glass, env.carLineMat, 'car-glass');
+  gb.box(0.05, ch - 0.3, cd - 0.3, '#d6ecf5', -cw / 2 + 0.03, ch / 2, 0, 0, false);
+  gb.box(0.05, ch - 0.3, cd - 0.3, '#d6ecf5', cw / 2 - 0.03, ch / 2, 0, 0, false);
+  gb.build(car, carMats.glass, env.carLineMat, 'car-glass', false);
   // sliding car doors
   const doorW = el.doorW, halfW = doorW / 2;
   const carDoors = [];
   for (const sgn of [-1, 1]) {
-    const m = new T.Mesh(new T.BoxGeometry(halfW - 0.02, 3.2, 0.08), new T.MeshLambertMaterial({ color: METAL_D }));
+    const m = new T.Mesh(new T.BoxGeometry(halfW - 0.02, 3.2, 0.08), new T.MeshStandardMaterial({ color: METAL_D, roughness: 0.5 }));
     m.position.set(sgn * halfW / 2, 1.6, cd / 2 - 0.02);
-    m.add(new T.LineSegments(new T.EdgesGeometry(m.geometry), env.carLineMat));
     m.userData.noPick = true;
     car.add(m);
     carDoors.push({ m, closedX: m.position.x, sgn });

@@ -19,8 +19,8 @@ const MODS = [
   { id: 'docs', label: 'docs/handoffs', x: 90, y: 490, owner: 'lead', ticket: 'KAN-149', review: 'none', group: 'infra' },
 ];
 const EDGES = [['mac', 'odds'], ['mobile', 'odds'], ['odds', 'theme'], ['odds', 'comp'], ['odds', 'engine'], ['engine', 'feed'], ['ai', 'engine'], ['fit', 'comp'], ['ci', 'comp'], ['ci', 'ai'], ['docs', 'ci']];
-const GROUP_COL = { apps: '#bcd6f2', ui: '#cdbcf0', core: '#bfe3c6', research: '#f3c6d3', infra: '#f1e2b6' };
-const REVIEW = { approved: ['#3fae5a', 'Approved'], 'in-review': ['#f2b632', 'In review'], changes: ['#e25a4f', 'Changes requested'], none: ['#a49d90', 'No PR yet'] };
+const GROUP_COL = { apps: '#dbe8fb', ui: '#e6defa', core: '#d7f0de', research: '#fbe0e8', infra: '#f6ecd0' };
+const REVIEW = { approved: ['#3dba5f', 'Approved'], 'in-review': ['#f5a431', 'In review'], changes: ['#ef4f4f', 'Changes requested'], none: ['#a7acb4', 'No PR yet'] };
 const NW = 190, NH = 78;
 
 export function createOverlays(ctx, store) {
@@ -47,10 +47,6 @@ export function createOverlays(ctx, store) {
   bus.on('toast', (e) => {
     if (/\bCI\b/.test(e.text || '') && Date.now() - lastCi < 3000) return;
     toast(e.text, { kind: e.kind, agent: e.agent });
-  });
-  bus.on('ask:open', (a) => {
-    const ag = store.agent(a.agent);
-    toast(`${ag?.short || 'Someone'} needs your call: ${truncate(a.text, 70)}`, { kind: 'warn', agent: a.agent });
   });
   bus.on('ask:answer', ({ choice, agent }) => {
     const skip = /skip/i.test(choice);
@@ -96,7 +92,7 @@ export function createOverlays(ctx, store) {
     const html = `<div class="binder" role="dialog" aria-modal="true" aria-label="${esc(a.name)} notebook" style="--c:${a.color}">
       <div class="rings"><i></i><i></i><i></i><i></i></div>
       <div class="pages">
-        <header>${avatarHTML(a, 40, STATES[a.status]?.color)}<div><h2 class="serif">${esc(a.short)}’s binder</h2><div class="muted">${esc(a.role)} · ${esc(store.floorName(a.floor))}</div></div><button class="x" data-b="close" aria-label="Close binder">✕</button></header>
+        <header>${avatarHTML(a, 40, STATES[a.status]?.color)}<div><h2 >${esc(a.short)}’s binder</h2><div class="muted">${esc(a.role)} · ${esc(store.floorName(a.floor))}</div></div><button class="x" data-b="close" aria-label="Close binder">✕</button></header>
         <p class="bsum serif">${esc(d.summary)}</p>
         <div class="bcols"><div>${d.sections.map((s) => `<h4>${esc(s.title)}</h4><ul>${(s.items || []).map((i) => `<li>${esc(i)}</li>`).join('')}</ul>`).join('')}</div>
         <div class="live-notes"><h4><span class="livedot"></span>Live notes</h4>${d.live.length ? d.live.map((x) => `<div class="ln"><time>${denverHM(x.ts)}</time> ${esc(truncate(x.text, 90))}</div>`).join('') : '<div class="muted">Nothing new yet — notes appear here as the session unfolds.</div>'}</div></div>
@@ -136,16 +132,16 @@ export function createOverlays(ctx, store) {
       const o = store.agent(m.owner) || { color: '#a49d90', short: m.owner };
       const [rc, rl] = REVIEW[m.review];
       return `<g class="node" transform="translate(${m.x} ${m.y})"><title>${esc(m.label)} — ${esc(o.short)} · ${esc(m.ticket)} · ${esc(rl)}</title>
-        <rect width="${NW}" height="${NH}" rx="12" fill="#fffbf2" stroke="#2b2622" stroke-width="1.6"/>
-        <rect width="${NW}" height="22" rx="12" fill="${GROUP_COL[m.group]}" stroke="#2b2622" stroke-width="1.6"/><rect y="12" width="${NW}" height="10" fill="${GROUP_COL[m.group]}"/><line x1="0" y1="22" x2="${NW}" y2="22" stroke="#2b2622" stroke-width="1.2"/>
+        <rect width="${NW}" height="${NH}" rx="12" fill="#fff" stroke="#e3e6ea" stroke-width="1.2"/>
+        <rect width="${NW}" height="22" rx="12" fill="${GROUP_COL[m.group]}" stroke="#111" stroke-width="1.6"/><rect y="12" width="${NW}" height="10" fill="${GROUP_COL[m.group]}"/><line x1="0" y1="22" x2="${NW}" y2="22" stroke="#111" stroke-width="1.2"/>
         <text x="10" y="16" class="mt">${esc(m.label)}</text>
-        <circle cx="22" cy="50" r="12" fill="${o.color}" stroke="#2b2622" stroke-width="1.4"/><text x="22" y="54" class="oi" text-anchor="middle" fill="#fff">${esc((o.short || '?').slice(0, 2).toUpperCase())}</text>
+        <circle cx="22" cy="50" r="12" fill="${o.color}" stroke="#111" stroke-width="1.4"/><text x="22" y="54" class="oi" text-anchor="middle" fill="#fff">${esc((o.short || '?').slice(0, 2).toUpperCase())}</text>
         <text x="42" y="46" class="mo">${esc(o.short)}</text><text x="42" y="60" class="mk">${esc(m.ticket)}${m.pr ? ' · PR ' + esc(m.pr) : ''}</text>
-        <circle cx="${NW - 16}" cy="50" r="6" fill="${rc}" stroke="#2b2622" stroke-width="1.2"/>${m.review === 'in-review' ? `<circle class="pulse" cx="${NW - 16}" cy="50" r="6" fill="none" stroke="${rc}" stroke-width="2"/>` : ''}
+        <circle cx="${NW - 16}" cy="50" r="6" fill="${rc}" stroke="#111" stroke-width="1.2"/>${m.review === 'in-review' ? `<circle class="pulse" cx="${NW - 16}" cy="50" r="6" fill="none" stroke="${rc}" stroke-width="2"/>` : ''}
         ${m.note ? `<text x="10" y="${NH - 6}" class="mn">${esc(m.note)}</text>` : ''}</g>`;
     }).join('');
     const groups = Object.entries(GROUP_COL).map(([g, c]) => `<span class="lg"><i style="background:${c}"></i>${g}</span>`).join('');
-    return { svg: `<svg viewBox="${vb.x} ${vb.y} ${vb.w} ${vb.h}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Repository map"><defs><pattern id="dots" width="24" height="24" patternUnits="userSpaceOnUse"><circle cx="2" cy="2" r="1.2" fill="#d9ccb3"/></pattern></defs><rect x="-2000" y="-2000" width="5000" height="5000" fill="url(#dots)"/>${edges}${nodes}</svg>`, groups, mods };
+    return { svg: `<svg viewBox="${vb.x} ${vb.y} ${vb.w} ${vb.h}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Repository map"><defs><pattern id="dots" width="24" height="24" patternUnits="userSpaceOnUse"><circle cx="2" cy="2" r="1.2" fill="#d9dde2"/></pattern></defs><rect x="-2000" y="-2000" width="5000" height="5000" fill="url(#dots)"/>${edges}${nodes}</svg>`, groups, mods };
   }
   function renderMap() {
     if (!mapOpen) return;
@@ -154,7 +150,7 @@ export function createOverlays(ctx, store) {
     const cards = jiraCards();
     const counts = Object.fromEntries(Object.keys(REVIEW).map((k) => [k, mods.filter((m) => m.review === k).length]));
     pm.innerHTML = `<div class="pmap card" role="dialog" aria-modal="true" aria-label="Project map">
-      <header><div><h2 class="serif">Project map <small>acme/pitchside</small></h2><div class="muted">Fictional modules, owners and review status · drag to pan · scroll to zoom · Esc to close</div></div>
+      <header><div><h2 >Project map <small>acme/pitchside</small></h2><div class="muted">Fictional modules, owners and review status · drag to pan · scroll to zoom · Esc to close</div></div>
         <div class="pm-tools"><button class="btn small" data-m="zi">+</button><button class="btn small" data-m="zo">−</button><button class="btn small" data-m="reset">Reset</button><button class="x" data-m="close" aria-label="Close map">✕</button></div></header>
       <div class="pm-body"><div class="pm-canvas">${svg}</div>
         <aside class="pm-side"><h4>Review status</h4>${Object.entries(REVIEW).map(([k, [c, l]]) => `<div class="rv"><i style="background:${c}"></i>${l}<b>${counts[k]}</b></div>`).join('')}
@@ -212,7 +208,7 @@ export function createOverlays(ctx, store) {
     const statsHTML = stats.map(([k, v]) => `<div><b>${v}</b><span>${k}</span></div>`).join('');
     if (live) { const el = sc.querySelector('.sumstats'); if (el) el.innerHTML = statsHTML; return; }
     sc.innerHTML = `<div class="sumcard card" role="dialog" aria-modal="true" aria-label="Demo summary"><div class="confetti" aria-hidden="true">${Array.from({ length: 14 }, (_, i) => `<i style="--i:${i}"></i>`).join('')}</div>
-      <h2 class="serif">${esc(scn?.title || 'Scenario')} — wrapped</h2><p class="muted">${esc(scn?.summary || 'The replay reached its end.')}</p>
+      <h2 >${esc(scn?.title || 'Scenario')} — wrapped</h2><p class="muted">${esc(scn?.summary || 'The replay reached its end.')}</p>
       <div class="sumstats">${statsHTML}</div>
       <div class="btns"><button class="btn primary" data-sm="again">↺ Watch again</button><button class="btn" data-sm="free">Free play</button><button class="btn ghost" data-sm="close">Close</button></div></div>`;
     sc.hidden = false;

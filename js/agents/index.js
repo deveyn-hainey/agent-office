@@ -1,4 +1,4 @@
-// Agents (S2): meeple characters, procedural animation, FSM, grid pathfinding, elevator/stairs travel, bubbles.
+// Agents (S2): glossy bot characters, procedural animation, FSM, grid pathfinding, elevator/stairs travel, bubbles.
 // Contract: docs/ARCHITECTURE.md §6. Additions are documented in docs/notes/s2.md.
 import { STATES, colorFor, angDiff, clamp, hash } from '../core/util.js';
 import { createMeepleFactory, applyRig, SCALE } from './meeple.js';
@@ -42,7 +42,7 @@ export function createAgents(ctx) {
     const color = colorFor(t);
     const rig = factory.build({ ...t, color });
     const anchor = new THREE.Object3D();
-    anchor.position.y = 2.67 * SCALE;
+    anchor.position.y = rig.topY + 0.5;
     rig.root.add(anchor);
     const a = {
       id: t.id, team: t, name: t.name, short: t.short || t.name, role: t.role, color, home: t.home, startVisible: t.startVisible !== false,
@@ -590,7 +590,7 @@ export function createAgents(ctx) {
     a.rig.root.position.set(a.x, a.y, a.z);
     a.rig.root.rotation.y = a.yaw + lyingYaw;
     applyRig(a.rig, a.ch, { t: reducedMotion ? 0 : a.animT, ph: a.walkPh, headYaw: a.headYaw, blink: a.blink, aimR: a.aim, seed: a.seed });
-    a.anchor.position.y = (2.67 - 0.93 * a.ch.lie - 0.33 * a.ch.sit) * SCALE;
+    a.anchor.position.y = (a.rig.topY + 0.5 - 0.75 * a.ch.lie) * SCALE;
 
     // pose change bookkeeping
     if (pose !== a.lastPose) {
