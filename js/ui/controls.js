@@ -42,8 +42,19 @@ export function createControls(ctx, store, api, panels, feeds) {
     else if (b.dataset.t === 'map') api.openProjectMap();
   });
   const zoomBox = $('zoom-box');
-  zoomBox.innerHTML = '<button data-z="1.25" title="Zoom in" aria-label="Zoom in">+</button><button data-z="0.8" title="Zoom out" aria-label="Zoom out">−</button>';
-  zoomBox.addEventListener('click', (e) => { const b = e.target.closest('[data-z]'); if (!b) return; cam()?.markUser?.(); cam()?.zoomBy(+b.dataset.z); });
+  zoomBox.innerHTML = '<button data-z="1.4" title="Zoom in (+)" aria-label="Zoom in">+</button><button data-z="0.7" title="Zoom out (−)" aria-label="Zoom out">−</button><button data-fit="1" class="fit" title="Fit floor (F)" aria-label="Fit floor">⤢</button>';
+  // fit: back to the overview of the floor being looked at (or all floors)
+  const fitView = () => {
+    const c = cam(); if (!c) return;
+    c.markUser?.();
+    const v = c.getView?.() || { type: 'all' };
+    const f = v.type === 'floor' ? v.floor : v.type === 'spot' && Number.isInteger(v.floor) ? v.floor : null;
+    c.setView(f != null ? { type: 'floor', floor: f } : 'all');
+  };
+  zoomBox.addEventListener('click', (e) => {
+    if (e.target.closest('[data-fit]')) return fitView();
+    const b = e.target.closest('[data-z]'); if (!b) return; cam()?.markUser?.(); cam()?.zoomBy(+b.dataset.z);
+  });
 
   // ------------------------------------------------------------------ brand card: logo, live clock, Day / Night / Tour
   const brand = $('brand-card');
@@ -255,6 +266,9 @@ export function createControls(ctx, store, api, panels, feeds) {
     else if (k === 'a' || k === 'A') c?.setView('all');
     else if (k === 'c' || k === 'C') c?.setClean(!c.isClean());
     else if (k === 'm' || k === 'M') api.openProjectMap();
+    else if (k === 'f' || k === 'F') fitView();
+    else if (k === '+' || k === '=') { c?.markUser?.(); c?.zoomBy?.(1.4); }
+    else if (k === '-' || k === '_') { c?.markUser?.(); c?.zoomBy?.(0.7); }
     else if (k === 's' || k === 'S') feeds.slack.toggle();
     else if (k === '/') { e.preventDefault(); input.focus(); }
     else if (k === ' ' && (e.target === document.body || e.target.closest?.('#stage'))) { e.preventDefault(); ctx.replay ? ctx.replay.toggle() : clock.toggle(); paintTransport(); }

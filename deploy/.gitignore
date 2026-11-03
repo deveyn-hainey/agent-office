@@ -1,2 +1,7 @@
 src/files.js
 dist/
+live/raw/
+live/config.json
+live/cursor.json
+live/*.events.json
+live/*.local.*

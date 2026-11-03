@@ -195,6 +195,10 @@ export function createWorld(ctx) {
       annotFloor = -1;
       const f = ctx.agents?.getFloor?.(view.agent);
       setFloorVisibility(Number.isInteger(f) ? f : nF - 1);
+    } else if (view.type === 'spot') {
+      // board close-up / zoom-to-point: keep the focused floor (if any) uncovered
+      const f = Number.isInteger(view.floor) ? view.floor : nF - 1;
+      annotFloor = view.annot ? f : -1; setFloorVisibility(f);
     } else { annotFloor = -1; setFloorVisibility(nF - 1); }
   }
   bus.on('cam:view', ({ view }) => applyView(view));

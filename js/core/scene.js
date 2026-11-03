@@ -80,6 +80,11 @@ export function createScene(container, { bus, clock, world }) {
       const t = p ? new THREE.Vector3(p.x, p.y + 1.0, p.z) : rig.target.clone();
       return { target: t, viewH: fit(11, 8) };
     }
+    if (view.type === 'spot') {
+      // close-up on a point (board focus / double-click zoom): explicit viewH, or fit a w x h box
+      const t = new THREE.Vector3(+view.x || 0, +view.y || 0, +view.z || 0);
+      return { target: t, viewH: clamp(view.viewH ?? fit((view.w || 10) * 1.2, (view.h || 5) * 1.9), 6, 150) };
+    }
     const h = hint.allView || { fitW: 54, fitH: 108 };
     return { target: new THREE.Vector3(0, (floorY(nFloors - 1) + floorY(0)) / 2 + wallH * 0.45 - BASE_H / 2, 0), viewH: fit(h.fitW, h.fitH + BASE_H * 0.9) };
   }
@@ -160,28 +165,65 @@ export function createScene(container, { bus, clock, world }) {
   /* ---------- input: wheel zoom, drag pan, click/hover events ---------- */
   const el = renderer.domElement;
   el.style.touchAction = 'none';
+  // zoom by factor f (>1 = in) keeping the world point under (clientX, clientY) fixed on screen.
+  // animate=true tweens there through a 'spot' view instead of jumping (double-click, +/- buttons).
+  function zoomAt(clientX, clientY, f, animate = false) {
+    const oldH = rig.viewH, newH = clamp(oldH / f, 6, 150);
+    const r = el.getBoundingClientRect();
+    const nx = ((clientX - r.left) / r.width) * 2 - 1, ny = -(((clientY - r.top) / r.height) * 2 - 1);
+    const aspect = size.w / size.h;
+    const t = rig.target.clone();
+    if (rig.view.type !== 'desk') t.addScaledVector(camRight, nx * (oldH - newH) * aspect / 2).addScaledVector(camUp, ny * (oldH - newH) / 2);
+    rig.lastUser = performance.now();
+    if (animate && rig.view.type !== 'desk') {
+      const v = rig.view;
+      const floor = v.type === 'floor' ? v.floor : v.type === 'spot' ? v.floor : undefined;
+      setView({ type: 'spot', x: t.x, y: t.y, z: t.z, viewH: newH, floor, annot: v.type === 'floor' || !!v.annot }, { duration: 0.45 });
+    } else {
+      rig.target.copy(t);
+      rig.viewH = newH;
+      rig.tween = null;
+    }
+    bus?.emit('cam:zoom', { viewH: newH });
+  }
+  cam.zoomAt = zoomAt;
+  cam.zoomBy = (f) => { const r = el.getBoundingClientRect(); zoomAt(r.left + r.width / 2, r.top + r.height / 2, f, true); };
+  // fly to a world point; w/h = size of the thing to frame (world units)
+  cam.focusPoint = (p, o = {}) => { rig.lastUser = performance.now(); setView({ type: 'spot', x: p.x, y: p.y, z: p.z, w: o.w, h: o.h, viewH: o.viewH, id: o.id, floor: o.floor }, { duration: o.duration ?? 1.0 }); };
   el.addEventListener('wheel', (e) => {
     e.preventDefault();
-    const f = Math.exp(-e.deltaY * 0.0012);
-    const oldH = rig.viewH, newH = clamp(oldH / f, 9, 150);
-    const r = el.getBoundingClientRect();
-    const nx = ((e.clientX - r.left) / r.width) * 2 - 1, ny = -(((e.clientY - r.top) / r.height) * 2 - 1);
-    const aspect = size.w / size.h;
-    if (rig.view.type !== 'desk') {
-      rig.target.addScaledVector(camRight, nx * (oldH - newH) * aspect / 2).addScaledVector(camUp, ny * (oldH - newH) / 2);
-    }
-    rig.viewH = newH;
-    rig.tween = null;
-    rig.lastUser = performance.now();
-    bus?.emit('cam:zoom', { viewH: rig.viewH });
+    // trackpad pinch arrives as ctrl+wheel with small deltas: scale it up a little
+    const k = e.ctrlKey ? 0.01 : 0.0012;
+    zoomAt(e.clientX, e.clientY, Math.exp(-e.deltaY * k));
   }, { passive: false });
+  el.addEventListener('dblclick', (e) => { bus?.emit('scene:dblclick', { clientX: e.clientX, clientY: e.clientY, event: e }); });
+  // touch pinch (two pointers): zoom toward the midpoint
+  const touches = new Map();
+  let pinch = null;
 
   let drag = null;
   el.addEventListener('pointerdown', (e) => {
+    if (e.pointerType === 'touch') {
+      touches.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      if (touches.size === 2) {
+        const [a, b] = [...touches.values()];
+        pinch = { d: Math.hypot(a.x - b.x, a.y - b.y) || 1 };
+        drag = null; // a pinch is never a click or a pan
+        return;
+      }
+    }
     drag = { x: e.clientX, y: e.clientY, sx: e.clientX, sy: e.clientY, moved: false, id: e.pointerId };
     el.setPointerCapture(e.pointerId);
   });
   el.addEventListener('pointermove', (e) => {
+    if (pinch && touches.has(e.pointerId)) {
+      touches.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      const [a, b] = [...touches.values()];
+      const d = Math.hypot(a.x - b.x, a.y - b.y) || 1;
+      zoomAt((a.x + b.x) / 2, (a.y + b.y) / 2, d / pinch.d);
+      pinch.d = d;
+      return;
+    }
     if (drag && drag.id === e.pointerId) {
       if (!drag.moved && Math.hypot(e.clientX - drag.sx, e.clientY - drag.sy) > 5) drag.moved = true;
       if (drag.moved && rig.view.type !== 'desk') {
@@ -195,6 +237,7 @@ export function createScene(container, { bus, clock, world }) {
     }
   });
   const endDrag = (e) => {
+    if (touches.delete(e.pointerId) && touches.size < 2) pinch = null;
     if (!drag || drag.id !== e.pointerId) return;
     if (!drag.moved && e.type === 'pointerup') bus?.emit('scene:click', { clientX: e.clientX, clientY: e.clientY, event: e });
     drag = null;

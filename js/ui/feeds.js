@@ -6,7 +6,9 @@ const ROLE_TAG = {
   lead: 'LEAD', codex: 'ENG', musecode: 'PRODUCT', muse: 'RESEARCH', grok: 'QA', cursor: 'UI',
   argon: 'REVIEW', chatgpt: 'CONNECTOR', reva: 'REVIEW·A', revb: 'REVIEW·B', ops: 'CI', scout: 'SCOUT', you: 'APPROVER',
 };
-const CHANNELS = ['build-room', 'decisions', 'review'];
+const LIVE = () => document.body.classList.contains('live-mode');
+const DEMO_CHANNELS = ['build-room', 'decisions', 'review'];
+const LIVE_CHANNELS = ['build-room', 'decisions', 'scratchpad']; // + any other channel that appears in the live feed
 const LOG_CAP = 60, MSG_CAP = 120;
 const REACTS = ['👍', '✅', '👀', '🎉', '🚀', '🔥'];
 
@@ -34,7 +36,7 @@ export function createFeeds(ctx, store) {
   // ------------------------------------------------------------------ slack pane
   const pane = $('slack-pane');
   const day = Date.now() - 3 * 3600e3;
-  const seeds = () => ({
+  const seeds = () => (LIVE() ? {} : {
     'build-room': [
       { who: 'Cursor', text: 'Theme tokens landed on main — PR #204 is green.', ts: day, react: [['✅', 2]] },
       { who: 'Codex', text: 'Odds-screen refactor is behind a flag; I’ll rebase after standup.', ts: day + 14 * 60e3, react: [['👍', 1]] },
@@ -52,9 +54,9 @@ export function createFeeds(ctx, store) {
   const reset = () => { chans = seeds(); unread = {}; active = 'build-room'; };
   reset();
 
-  pane.innerHTML = `<header class="s-head"><div><h3>Team chat</h3><span class="ro"><i></i>Scenario replay · read-only</span></div><button class="x" data-s="close" aria-label="Close chat">✕</button></header>
+  pane.innerHTML = `<header class="s-head"><div><h3>Team chat</h3><span class="ro"><i></i>${LIVE() ? 'LIVE · read-only mirror' : 'Scenario replay · read-only'}</span></div><button class="x" data-s="close" aria-label="Close chat">✕</button></header>
     <nav class="tabs" role="tablist"></nav><div class="s-msgs" role="log"></div>
-    <footer class="s-foot"><span>🔒 Replay only — nothing here is sent anywhere. Use the command box to talk to the team.</span></footer>`;
+    <footer class="s-foot"><span>${LIVE() ? '🔒 Read-only mirror of the team channels. Nothing here is ever sent back.' : '🔒 Replay only — nothing here is sent anywhere. Use the command box to talk to the team.'}</span></footer>`;
   const tabsEl = pane.querySelector('.tabs'), msgsEl = pane.querySelector('.s-msgs');
 
   const normChan = (c) => {
@@ -62,7 +64,7 @@ export function createFeeds(ctx, store) {
     return !c || c === 'pitchside' ? 'build-room' : c;
   };
   function renderTabs() {
-    const names = [...new Set([...CHANNELS, ...Object.keys(chans)])];
+    const names = [...new Set([...(LIVE() ? LIVE_CHANNELS : DEMO_CHANNELS), ...Object.keys(chans)])];
     tabsEl.innerHTML = names.map((n) => `<button role="tab" class="tab${n === active ? ' on' : ''}" data-chan="${esc(n)}"># ${esc(n)}${unread[n] ? `<em>${unread[n]}</em>` : ''}</button>`).join('');
   }
   function msgNode(m, fresh) {
@@ -76,7 +78,7 @@ export function createFeeds(ctx, store) {
     const rx = el.querySelector('.rx');
     const paint = () => { rx.innerHTML = (m.react || []).map(([e, n]) => `<span class="re">${e} <b>${n}</b></span>`).join(''); };
     paint();
-    if (fresh && !m.react) {
+    if (fresh && !m.react && !LIVE()) {
       // a believable reaction shows up a moment later
       const hh = hash(m.text + m.who);
       const delay = you ? 1600 : 1200 + (hh % 1400);

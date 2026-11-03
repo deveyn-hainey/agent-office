@@ -9,8 +9,12 @@ const getJSON = async (path) => {
   return r.json();
 };
 
+// Live mode: only when served under /live/ (private, behind Cloudflare Access). Locally, ?live=local-test on 127.0.0.1/localhost.
+const LIVE = location.pathname.startsWith('/live') || (/^(127\.0\.0\.1|localhost)$/.test(location.hostname) && new URLSearchParams(location.search).get('live') === 'local-test');
+
 async function boot() {
   const params = parseParams();
+  if (LIVE) { document.body.classList.add('live-mode'); document.title = 'Office Bot · Live'; params.demo = ''; }
   const bus = createBus();
   const clock = createClock(bus);
   const [worldData, team] = await Promise.all([getJSON('data/world.json'), getJSON('data/team.json')]);
@@ -74,6 +78,14 @@ async function boot() {
     }
   }
   if (params.paused) clock.pause();
+  if (LIVE) {
+    try {
+      const { createAdapter } = await import('./director/adapters/live.js');
+      ctx.live = createAdapter(ctx, {});
+      ctx.live.start();
+      window.office.live = ctx.live;
+    } catch (e) { console.warn('[live] adapter unavailable', e); }
+  }
 }
 
 boot().catch((e) => {

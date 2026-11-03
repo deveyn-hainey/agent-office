@@ -1,0 +1,20 @@
+{
+  "_comment": "Copy to ~/.config/agent-office/config.json (chmod 600, never commit). All IDs/names below are FICTIONAL placeholders.",
+  "channels": {
+    "C000BUILD01": { "name": "build-room", "kind": "build" },
+    "C000DECIDE1": { "name": "decisions", "kind": "decisions" },
+    "C000SCRTCH1": { "name": "scratchpad", "kind": "scratch" },
+    "C000PROJECT": { "name": "project-mockup", "kind": "build" }
+  },
+  "users": {
+    "U000LEADBOT": { "agent": "lead" },
+    "U000CODEXBT": { "agent": "codex" },
+    "U000HUMAN01": { "display": "Alex (human)", "slot": "op-4f-1" }
+  },
+  "tags": { "Lead": "lead", "Lead · Codex": "codex", "Codex": "codex", "Muse": "muse", "Muse Code": "musecode" },
+  "sentUsing": { "ChatGPT": "chatgpt" },
+  "agentNames": { "lead": "Lead (Claude Code)", "codex": "Codex", "muse": "Muse", "musecode": "Muse Code", "grok": "Grok", "cursor": "Cursor", "argon": "Argon (reviewer)", "chatgpt": "ChatGPT" },
+  "rawDir": "~/.config/agent-office/raw",
+  "cursorFile": "~/.config/agent-office/cursor.json",
+  "ingestEnv": "~/.config/agent-office/ingest.env"
+}

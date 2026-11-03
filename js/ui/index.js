@@ -4,6 +4,7 @@ import { createPanels } from './panels.js';
 import { createFeeds } from './feeds.js';
 import { createControls } from './controls.js';
 import { createOverlays } from './overlays.js';
+import { createBoards } from './boards.js';
 
 export function createUI(ctx) {
   const { bus } = ctx;
@@ -18,6 +19,7 @@ export function createUI(ctx) {
   const panels = createPanels(ctx, store, api);
   const feeds = createFeeds(ctx, store);
   const controls = createControls(ctx, store, api, panels, feeds);
+  const boards = createBoards(ctx, store);
 
   api.openDeskView = (id) => {
     if (!store.agent(id)) return;
@@ -32,7 +34,7 @@ export function createUI(ctx) {
     c.markUser?.();
     c.setView(panels.prevView || 'all');
   };
-  api.escape = () => overlays.escape();
+  api.escape = () => overlays.escape() || boards.close();
 
   // picking: click an agent -> desk view; double-click handled in overlays (map)
   bus.on('agent:click', ({ id }) => api.openDeskView(id));
@@ -57,6 +59,7 @@ export function createUI(ctx) {
     setRoutine: (id, on) => store.toggleRoutine(id, on),
     showSummary: () => overlays.showSummary(),
     runDemo: () => controls.loadScenario('full'),
+    boards,
     store,
   };
   return ui;

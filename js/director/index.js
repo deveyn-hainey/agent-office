@@ -183,6 +183,8 @@ export function createDirector(ctx) {
       if (!claimed.has(a.agent) && !isClaimed(a.agent)) ctx.agents?.setStatus?.(a.agent, 'working', a.next || '');
     },
 
+    // live adapters: apply one event right now (same handlers as scenario events; independent of replay state)
+    ingest(e) { if (e && e.type) dispatch({ ...e, t: cursor }); },
     getBinder: (id) => (binders[id] ? clone(binders[id]) : null),
     command: (text, o) => commands.command(text, o),
     parseCommand: (text) => commands.parse(text),
