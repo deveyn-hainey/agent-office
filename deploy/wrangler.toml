@@ -1,4 +1,4 @@
-# Optional wrangler deploy (run `node deploy/build.mjs` first). Password: `wrangler secret put SITE_PASSWORD`.
+# Optional wrangler deploy (run `node deploy/build.mjs` first). Optional password gate: `wrangler secret put SITE_PASSWORD`.
 name = "agent-office"
 main = "src/worker.js"
 compatibility_date = "2026-10-01"

@@ -1,6 +1,6 @@
 // Password gate for Agent Office v2 (Cloudflare Worker).
-// HTTP Basic Auth: any username; password must equal the SITE_PASSWORD secret.
-// The password is never stored in code; set it with: wrangler secret put SITE_PASSWORD
+// Opt-in HTTP Basic Auth. If the SITE_PASSWORD secret is NOT set, the site is public.
+// If it is set: any username; password must equal the secret. Set with: wrangler secret put SITE_PASSWORD
 const REALM = 'Agent Office';
 
 function timingSafeEqual(a, b) {
@@ -12,7 +12,7 @@ function timingSafeEqual(a, b) {
 
 export function checkAuth(request, env) {
   const secret = env.SITE_PASSWORD;
-  if (!secret) return false; // fail closed if the secret is missing
+  if (!secret) return true; // no secret configured = public site
   const h = request.headers.get('Authorization') || '';
   const m = h.match(/^Basic\s+(.+)$/i);
   if (!m) return false;
