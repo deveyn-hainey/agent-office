@@ -1,0 +1,18 @@
+{
+  "version": 2,
+  "human": { "id": "you", "name": "You", "role": "Approver" },
+  "agents": [
+    { "id": "lead",    "name": "Lead (Claude Code)", "short": "Lead",   "role": "Lead / PM",                 "seat": "Lead desk",  "home": "desk-4f-lead",    "color": "#d97757", "kind": "agent",    "startVisible": true },
+    { "id": "codex",   "name": "Codex",              "short": "Codex",  "role": "Engineering",               "seat": "AI-wiring",  "home": "desk-2f-ai-1",    "color": "#3d7be0", "kind": "agent",    "startVisible": true },
+    { "id": "musecode","name": "Muse Code",          "short": "MuseC",  "role": "Product strategy",          "seat": "Design",     "home": "desk-2f-design-1","color": "#9b6bff", "kind": "agent",    "startVisible": true },
+    { "id": "muse",    "name": "Muse",               "short": "Muse",   "role": "Fit & geometry research",   "seat": "Design",     "home": "desk-2f-design-2","color": "#c86bd6", "kind": "agent",    "startVisible": true },
+    { "id": "grok",    "name": "Grok",               "short": "Grok",   "role": "Device & QA",               "seat": "Mobile",     "home": "desk-2f-mobile-1","color": "#2f2f35", "kind": "agent",    "startVisible": true },
+    { "id": "cursor",  "name": "Cursor",             "short": "Cursor", "role": "UI build",                  "seat": "UI",         "home": "desk-2f-ui-1",    "color": "#1fa3a3", "kind": "agent",    "startVisible": true },
+    { "id": "argon",   "name": "Argon (reviewer)",   "short": "Argon",  "role": "Code review",               "seat": "Reviewer",   "home": "desk-3f-argon",   "color": "#e0a03a", "kind": "agent",    "startVisible": true },
+    { "id": "chatgpt", "name": "ChatGPT",            "short": "GPT",    "role": "Connector / research",      "seat": "Connector",  "home": "desk-4f-chatgpt", "color": "#10a37f", "kind": "agent",    "startVisible": true },
+    { "id": "reva",    "name": "Review agent A",     "short": "Rev A",  "role": "Review subagent (spawned)", "seat": "Conf A",     "home": "conf-3f-a-1",     "color": "#f06292", "kind": "subagent", "startVisible": false },
+    { "id": "revb",    "name": "Review agent B",     "short": "Rev B",  "role": "Review subagent (spawned)", "seat": "Conf B",     "home": "conf-3f-b-1",     "color": "#7e57c2", "kind": "subagent", "startVisible": false },
+    { "id": "ops",     "name": "CI runner",          "short": "CI",     "role": "Runs scripts/ci-local.sh",  "seat": "CI wall",    "home": "ci-2f",           "color": "#6d8a4e", "kind": "agent",    "startVisible": true },
+    { "id": "scout",   "name": "Scout",              "short": "Scout",  "role": "Research subagent",         "seat": "Connector",  "home": "desk-4f-scout",   "color": "#ff8a4c", "kind": "subagent", "startVisible": false }
+  ]
+}

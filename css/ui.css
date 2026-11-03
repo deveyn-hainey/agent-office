@@ -1,0 +1,16 @@
+/* STUB UI styles (S4 replaces this file). Positions only; just enough to make the stub UI legible. */
+#top-pill { position: absolute; top: 12px; left: 50%; transform: translateX(-50%); padding: 6px 16px; font-family: var(--serif); display: flex; gap: 14px; align-items: center; }
+#top-pill .dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 4px; }
+#left-panel { position: absolute; top: 12px; left: 12px; width: 240px; }
+#right-panel { position: absolute; top: 12px; right: 12px; width: 280px; }
+#activity-log { position: absolute; left: 12px; bottom: 72px; width: 360px; max-height: 190px; overflow: auto; padding: 8px 10px; font: 12px/1.45 var(--mono); }
+#slack-pane { position: absolute; right: 12px; bottom: 72px; width: 300px; max-height: 190px; overflow: auto; padding: 8px 10px; font-size: 12px; }
+#bottom-nav { position: absolute; left: 50%; bottom: 14px; transform: translateX(-50%); padding: 6px 10px; display: flex; gap: 6px; }
+#bottom-nav button, #replay-controls button { font: inherit; border: 1px solid var(--border); background: #fff; border-radius: 8px; padding: 4px 10px; cursor: pointer; }
+#bottom-nav button.on { background: var(--ink); color: #fff; }
+#replay-controls { position: absolute; left: 12px; bottom: 14px; padding: 6px 10px; display: flex; gap: 6px; align-items: center; }
+#command-box { position: absolute; right: 12px; bottom: 14px; padding: 6px; display: flex; gap: 6px; width: 340px; }
+#command-box input { flex: 1; font: inherit; padding: 5px 8px; border: 1px solid var(--border); border-radius: 8px; }
+#toast { position: absolute; top: 60px; left: 50%; transform: translateX(-50%); padding: 8px 14px; }
+#desk-view { position: absolute; top: 12px; right: 12px; width: 300px; }
+.ui-overlay { position: absolute; inset: 0; background: rgba(43, 38, 34, 0.35); display: grid; place-items: center; }

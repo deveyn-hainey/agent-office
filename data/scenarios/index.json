@@ -1,0 +1,6 @@
+{
+  "scenarios": [
+    { "id": "intake-huddle", "title": "Intake & planning huddle", "file": "intake-huddle.json" }
+  ],
+  "aliases": { "intake": "intake-huddle", "review": "hero-review", "full": "full-day" }
+}
