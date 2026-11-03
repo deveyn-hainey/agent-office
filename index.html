@@ -28,18 +28,26 @@
 
   <!-- UI regions (S4 owns the contents; ids are a stable contract) -->
   <div id="ui-root">
-    <header id="top-pill" class="card ui-region"></header>
-    <aside id="left-panel" class="ui-region"></aside>
-    <aside id="right-panel" class="ui-region"></aside>
-    <section id="activity-log" class="card ui-region"></section>
-    <section id="slack-pane" class="card ui-region"></section>
-    <nav id="bottom-nav" class="card ui-region"></nav>
-    <div id="replay-controls" class="card ui-region"></div>
+    <header id="top-pill" class="card ui-region" aria-label="Office status"></header>
+    <div id="replay-controls" class="card ui-region" aria-label="Scenario replay controls"></div>
+    <div id="drawer-toggles" class="ui-region"></div>
+    <div id="left-col" class="ui-col">
+      <aside id="left-panel" class="ui-region"></aside>
+    </div>
+    <div id="slack-col" class="ui-col">
+      <section id="slack-pane" class="card ui-region" aria-label="Scenario replay chat (read-only)"></section>
+    </div>
+    <div id="right-col" class="ui-col">
+      <aside id="right-panel" class="ui-region"></aside>
+      <div id="desk-view" class="ui-region" hidden></div>
+      <section id="activity-log" class="card ui-region"></section>
+    </div>
     <form id="command-box" class="card ui-region" autocomplete="off"></form>
-    <div id="desk-view" class="ui-region" hidden></div>
+    <nav id="bottom-nav" class="card ui-region" aria-label="Camera"></nav>
     <div id="binder-modal" class="ui-overlay" hidden></div>
     <div id="project-map" class="ui-overlay" hidden></div>
-    <div id="toast" class="card" hidden></div>
+    <div id="summary-card" class="ui-overlay" hidden></div>
+    <div id="toast" aria-live="polite"></div>
   </div>
 </div>
 
