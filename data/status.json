@@ -1,5 +1,5 @@
 {
-  "updated": "2026-11-03T18:40:57Z",
+  "updated": "2026-11-03T20:03:20Z",
   "agents": {
     "info": {
       "state": "finished",
@@ -27,9 +27,9 @@
       "updated": "2026-11-02T22:48:58Z"
     },
     "jo": {
-      "state": "needs-you",
-      "task": "Paused rondo redesign and Body-Pose fitting until Claude usage resets at 12:50 PM; asking if it should auto-resume then",
-      "updated": "2026-11-03T18:40:57Z"
+      "state": "working",
+      "task": "Resumed: Body-Pose fitting in review and testing; rondo redesign fonts and sizes phase just finished",
+      "updated": "2026-11-03T20:03:20Z"
     },
     "po": {
       "state": "idle",
@@ -37,14 +37,14 @@
       "updated": "2026-11-02T22:48:58Z"
     },
     "claude": {
-      "state": "stuck",
-      "task": "Hit the 5-hour Claude usage limit; resets at 12:50 PM MT",
-      "updated": "2026-11-03T18:40:57Z"
+      "state": "working",
+      "task": "Back on subscription; running Body-Pose fit tests and finished the rondo redesign fonts phase",
+      "updated": "2026-11-03T20:03:20Z"
     },
     "boo": {
-      "state": "needs-you",
-      "task": "Stopped at your request; live Slack office view and board zoom half-built, asking whether to resume or undo",
-      "updated": "2026-11-03T18:40:57Z"
+      "state": "working",
+      "task": "Resumed building the private live Slack office page and easier board zooming",
+      "updated": "2026-11-03T20:03:20Z"
     }
   }
 }

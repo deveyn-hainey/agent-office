@@ -1,5 +1,20 @@
 [
   {
+    "time": "2026-11-03T20:03:20Z",
+    "agent": "claude",
+    "text": "Claude usage reset; Claude Code sessions running again"
+  },
+  {
+    "time": "2026-11-03T20:03:20Z",
+    "agent": "boo",
+    "text": "Boo resumed the live Slack office view build"
+  },
+  {
+    "time": "2026-11-03T20:03:20Z",
+    "agent": "jo",
+    "text": "Jo resumed Body-Pose fitting and the rondo redesign after Claude usage reset"
+  },
+  {
     "time": "2026-11-03T18:40:57Z",
     "agent": "claude",
     "text": "Claude hit its 5-hour usage limit; all sessions paused until 12:50 PM MT"
