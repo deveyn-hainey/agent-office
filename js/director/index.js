@@ -1,46 +1,54 @@
-// STUB director + replay (S3 replaces this folder's contents, keeping the exported contract).
-// Executes scenario JSON events on the shared clock. Implements the core event types so the page demos end to end.
+// Director + replay (S3). Executes scenario JSON on the shared clock, runs ambient office life for unclaimed agents,
+// and routes the command box. Contract: docs/ARCHITECTURE.md §7. Additions are documented in docs/notes/s3.md.
+import { createRuntime } from './runtime.js';
+import { createActions } from './actions.js';
+import { createAmbient } from './ambient.js';
+import { createCommands } from './commands.js';
+import { createHandlers } from './events.js';
+import { hideSummary } from './summary.js';
 
 export function createDirector(ctx) {
   const { bus, clock } = ctx;
+  const rt = createRuntime(ctx);
   const get = (path) => fetch(path).then((r) => { if (!r.ok) throw new Error(`${path}: ${r.status}`); return r.json(); });
 
-  let index = null, scenario = null, events = [], cursor = 0, next = 0, blocked = null, running = false, lastEmit = 0;
+  let index = null, scenario = null, events = [], cursor = 0, next = 0, blocked = null, running = false, lastEmit = 0, ended = false;
+  let totalBlocked = 0, startMs = Date.now();
   const claimed = new Set();
   const asks = new Map();
-  let ambient = true;
+  let pristineBinders = {};
+  let binders = {};
+  let sceneToken = rt.token();
+  const stats = { agents: new Set(), findings: 0, asks: 0 };
+  rt.cursor = () => cursor;
 
-  const A = () => ctx.agents, W = () => ctx.world;
-  const slotRef = (s) => String(s || '').replace(/^slot:/, '');
-  const activity = (agent, text, kind = 'log') => bus.emit('activity', { ts: clock.simDate().getTime(), agent, text, kind, floor: A()?.get(agent)?.floor ?? null });
+  fetch('data/binders.json').then((r) => (r.ok ? r.json() : {})).then((j) => { pristineBinders = j || {}; binders = clone(pristineBinders); bus.emit('binder:update', { agent: null }); }).catch(() => {});
+  const clone = (o) => JSON.parse(JSON.stringify(o ?? {}));
 
-  const handlers = {
-    status: (e) => { A().setStatus(e.agent, e.state, e.task || ''); activity(e.agent, `${e.state}${e.task ? ': ' + e.task : ''}`, 'status'); },
-    say: (e) => { A().say(e.agent, e.text || '', { ms: e.ms, style: e.style }); if (e.text && !e.quiet) activity(e.agent, e.text, 'say'); },
-    move: (e) => { claimed.add(e.agent); A().moveTo(e.agent, e.to); },
-    look: (e) => (e.agents || [e.agent]).forEach((id) => A().lookAt(id, e.at)),
-    pose: (e) => A().setPose(e.agent, e.pose, { ms: e.ms }),
-    surface: (e) => W().surfaces.update(e.surface, e.op || 'set', e.data),
-    feed: (e) => { bus.emit('slack:message', { channel: e.channel || '#pitchside', who: e.who, text: e.text, ts: clock.simDate().getTime() }); },
-    vote: (e) => { A().ballot(e.agent, e.choice); bus.emit('vote:cast', { proposal: e.proposal, agent: e.agent, choice: e.choice }); activity(e.agent, `voted ${e.choice} on ${e.proposal}`, 'vote'); },
-    ask: (e) => {
-      asks.set(e.id, e);
-      A().setStatus(e.agent, 'waiting', e.text); A().setAlert(e.agent, true);
-      bus.emit('ask:open', { id: e.id, agent: e.agent, text: e.text, options: e.options || ['Approve', 'Skip'] });
-      activity(e.agent, e.text, 'ask');
-    },
-    toast: (e) => bus.emit('toast', { text: e.text, kind: e.kind || 'info', agent: e.agent }),
-    camera: (e) => { if (!ctx.scene.cam.userActive(20)) ctx.scene.cam.setView(e.view, { duration: e.duration }); },
-    spawn: (e) => { claimed.add(e.agent); A().spawn(e.agent, e.at); },
-    despawn: (e) => A().despawn(e.agent),
-    release: (e) => (e.agents || [e.agent]).forEach((id) => claimed.delete(id)),
-    fx: (e) => { const s = e.at ? W().slot(slotRef(e.at)) : null; W().fx(e.kind, s?.floor ?? e.floor ?? 0, s?.x ?? e.x ?? 0, s?.z ?? e.z ?? 0); },
-    log: (e) => activity(e.agent, e.text, e.kind || 'log'),
-    ambient: (e) => { ambient = !!e.on; },
-    marker: (e) => bus.emit('replay:marker', { id: e.id, label: e.label, t: e.t }),
-    waitArrive: (e) => { if (!clock.seeking) blocked = { type: 'arrive', agents: e.agents === 'all' ? A().list().map((a) => a.id) : e.agents, left: e.timeout ?? 60 }; },
-    waitAnswer: (e) => { if (!clock.seeking) blocked = { type: 'answer', id: e.id, left: e.timeout ?? 120 }; },
+  const isClaimed = (id) => claimed.has(id) || [...asks.values()].some((a) => a.agent === id);
+  const actionsHooks = {
+    claim: (id) => d.claim(id),
+    release: (ids) => ids.forEach((i) => claimed.delete(i)),
+    getBinder: (id) => director.getBinder(id),
+    pendingAsks: () => director.pendingAsks(),
+    answer: (id, c) => director.answer(id, c),
+    finding: () => { stats.findings++; },
   };
+  const actions = createActions(ctx, rt, actionsHooks);
+  const ambient = createAmbient(ctx, rt, actions, isClaimed);
+
+  const d = {
+    stats, asks, get binders() { return binders; },
+    get sceneToken() { return sceneToken; },
+    claim(id) { if (!id) return; claimed.add(id); ambient.claim(id); },
+    release: (id) => claimed.delete(id),
+    setBlocked: (b) => { blocked = b; },
+    setAmbient: (on) => director.setAmbient(on),
+    answer: (id, c, o) => director.answer(id, c, o),
+    elapsed: () => cursor + totalBlocked,
+  };
+  const handlers = createHandlers(ctx, rt, actions, d);
+  const commands = createCommands(ctx, rt, actions, actionsHooks);
 
   function dispatch(e) {
     const h = handlers[e.type];
@@ -52,74 +60,137 @@ export function createDirector(ctx) {
   function step(dt) {
     if (blocked) {
       blocked.left -= dt;
-      const done = blocked.type === 'arrive' ? blocked.agents.every((id) => A().isArrived(id)) : !asks.has(blocked.id);
-      if (done || blocked.left <= 0) blocked = null; else return;
+      totalBlocked += dt;
+      let done;
+      if (blocked.type === 'arrive') done = blocked.agents.every((id) => !rt.visible(id) || ctx.agents.isArrived(id));
+      else done = !asks.has(blocked.id);
+      if (!done && blocked.left <= 0) {
+        if (blocked.type === 'answer' && blocked.auto && asks.has(blocked.id)) director.answer(blocked.id, asks.get(blocked.id).options?.[0] || 'Approve', { auto: true });
+        done = true;
+      }
+      if (!done) return;
+      blocked = null;
     }
     cursor += dt;
     while (next < events.length && events[next].t <= cursor) {
       dispatch(events[next++]);
-      if (blocked) break;
+      if (blocked) return;
     }
-    if (next >= events.length && !blocked && running) { running = false; bus.emit('replay:end', { id: scenario?.id }); }
+    if (next >= events.length && !blocked && running && !clock.seeking && !ended) finish();
+  }
+
+  function finish() {
+    ended = true;
+    running = false;
+    bus.emit('replay:time', { t: director.duration, duration: director.duration });
+    bus.emit('replay:end', { id: scenario?.id });
+    // hand everyone back to ambient life shortly after the finale
+    rt.sleep(6, sceneToken).then((ok) => { if (ok) scenario?.agents?.forEach((id) => claimed.delete(id)); });
   }
 
   const director = {
     async load(idOrAlias) {
-      index ||= await get('data/scenarios/index.json');
+      try {
+        index ||= await get('data/scenarios/index.json');
+      } catch (e) { console.warn('[director] no scenario index', e); return null; }
       const id = index.aliases?.[idOrAlias] || idOrAlias;
       const entry = index.scenarios.find((s) => s.id === id);
-      if (!entry) { console.warn(`[director] scenario "${idOrAlias}" not available yet`); return null; }
-      scenario = await get(`data/scenarios/${entry.file}`);
-      events = [...scenario.events].sort((a, b) => a.t - b.t);
+      if (!entry) { console.warn(`[director] scenario "${idOrAlias}" not available`); return null; }
+      let sc;
+      try { sc = await get(`data/scenarios/${entry.file}`); } catch (e) { console.warn('[director] scenario load failed', e); return null; }
+      scenario = sc;
+      events = sc.events.map((e, i) => ({ e, i })).sort((a, b) => a.e.t - b.e.t || a.i - b.i).map((x) => x.e);
+      running = false;
       director.reset();
       bus.emit('replay:load', { id: scenario.id, title: scenario.title, duration: director.duration, chapters: scenario.chapters || [], agents: scenario.agents || [] });
       return scenario;
     },
+
     reset() {
-      cursor = 0; next = 0; blocked = null; asks.clear();
-      A()?.reset(); W()?.reset();
+      sceneToken.cancel();
+      sceneToken = rt.token();
+      commands.cancelAll();
+      ambient.reset();
+      cursor = 0; next = 0; blocked = null; ended = false; totalBlocked = 0;
+      asks.clear();
+      claimed.clear();
+      scenario?.agents?.forEach((id) => claimed.add(id));
+      stats.agents.clear(); stats.findings = 0; stats.asks = 0;
+      binders = clone(pristineBinders);
+      hideSummary();
+      ctx.agents?.reset?.(); ctx.world?.reset?.();
+      startMs = clock.simDate().getTime();
       bus.emit('replay:reset', {});
+      bus.emit('binder:update', { agent: null });
     },
-    play() { if (scenario) { running = true; bus.emit('replay:play', {}); } clock.play(); },
+
+    play() {
+      if (scenario) {
+        if (ended || (next >= events.length && !blocked && events.length)) { director.reset(); }
+        running = true;
+        bus.emit('replay:play', {});
+      }
+      clock.play();
+    },
     pause() { clock.pause(); bus.emit('replay:pause', {}); },
+    restart() { director.seek(0); director.play(); },
+
     seek(t) {
+      t = Math.max(0, +t || 0);
       bus.emit('replay:seek', { t });
+      const was = running;
       director.reset();
       clock.seeking = true;
-      try { while (cursor < t && (next < events.length)) step(0.1); } finally { clock.seeking = false; }
-      cursor = Math.min(cursor, t);
+      rt.tsBase = () => startMs + cursor * 1000;
+      try {
+        let guard = 0;
+        while (cursor < t && next < events.length && guard++ < 200000) step(0.1);
+        // drain events that fall exactly at/below t
+      } finally {
+        clock.seeking = false;
+        rt.tsBase = null;
+      }
+      cursor = Math.min(Math.max(cursor, 0), Math.max(t, 0));
+      running = was || running;
+      bus.emit('replay:time', { t: cursor, duration: director.duration });
       bus.emit('replay:seeked', { t: cursor });
     },
+
     get time() { return cursor; },
     get duration() { return scenario ? Math.max(0, ...events.map((e) => e.t)) + 3 : 0; },
     get running() { return running; },
     get scenario() { return scenario; },
-    setAmbient: (on) => { ambient = !!on; },
-    claim: (ids) => ids.forEach((i) => claimed.add(i)),
-    release: (ids) => ids.forEach((i) => claimed.delete(i)),
-    isClaimed: (id) => claimed.has(id),
-    pendingAsks: () => [...asks.values()],
-    answer(id, choice) {
-      const a = asks.get(id); if (!a) return;
+    setAmbient: (on) => ambient.set(on),
+    get ambient() { return ambient.enabled; },
+    claim: (ids) => [].concat(ids).forEach((i) => d.claim(i)),
+    release: (ids) => [].concat(ids).forEach((i) => claimed.delete(i)),
+    isClaimed,
+    pendingAsks: () => [...asks.values()].map((a) => ({ id: a.id, agent: a.agent, text: a.text, options: a.options || ['Approve', 'Skip'] })),
+
+    answer(id, choice, o = {}) {
+      const a = asks.get(id);
+      if (!a) return;
       asks.delete(id);
-      A().setAlert(a.agent, false); A().setStatus(a.agent, 'working', '');
-      bus.emit('ask:answer', { id, choice, agent: a.agent });
-      activity('you', `${choice}: ${a.text}`, 'ask');
+      ctx.agents?.setAlert?.(a.agent, false);
+      rt.status(a.agent, 'working', a.next || '', { log: false });
+      bus.emit('ask:answer', { id, choice, agent: a.agent, ...(o.auto ? { auto: true } : {}) });
+      rt.activity('you', `${choice}${o.auto ? ' (auto, demo)' : ''}: ${a.text}`, 'ask');
+      rt.slack('You', `${choice}${o.auto ? ' (auto-approved for the demo)' : ''}`, { you: true });
+      const reply = a.reply?.[choice];
+      if (reply) setTimeout(() => rt.say(a.agent, reply, { ms: 4600, slack: true }), clock.seeking ? 0 : 600 / Math.max(0.5, clock.speed));
+      if (!claimed.has(a.agent) && !isClaimed(a.agent)) ctx.agents?.setStatus?.(a.agent, 'working', a.next || '');
     },
-    getBinder: () => null,
-    async command(text) {
-      bus.emit('command:submitted', { text });
-      bus.emit('slack:message', { channel: '#pitchside', who: 'You', text, ts: clock.simDate().getTime(), you: true });
-      W().surfaces.update('board-4f', 'push', { path: 'requests', item: { who: 'You', text } });
-      activity('you', text, 'command');
-      const res = { ok: true, summary: 'Stub director: request posted to the board (no actions yet).' };
-      bus.emit('command:result', { text, ...res });
-      return res;
-    },
+
+    getBinder: (id) => (binders[id] ? clone(binders[id]) : null),
+    command: (text, o) => commands.command(text, o),
+    parseCommand: (text) => commands.parse(text),
+
     update(dt, simT) {
+      if (dt > 0) { rt.tick(dt); ambient.update(dt); }
       if (!running || clock.paused || dt <= 0) return;
-      step(dt);
-      if (simT - lastEmit > 0.25) { lastEmit = simT; bus.emit('replay:time', { t: cursor, duration: director.duration }); }
+      let left = dt;
+      while (left > 1e-6 && running) { const s = Math.min(0.25, left); left -= s; step(s); }
+      if (simT - lastEmit > 0.25) { lastEmit = simT; bus.emit('replay:time', { t: Math.min(cursor, director.duration), duration: director.duration }); }
     },
   };
   ctx.scene.addUpdate((dt, t) => director.update(dt, t));
@@ -128,17 +199,19 @@ export function createDirector(ctx) {
 
 export function createReplay(ctx) {
   const d = () => ctx.director;
+  let idx = null;
   return {
     load: (id) => d().load(id),
     play: () => d().play(),
     pause: () => d().pause(),
     toggle: () => (ctx.clock.paused || !d().running ? d().play() : d().pause()),
     seek: (t) => d().seek(t),
-    setSpeed: (s) => ctx.clock.setSpeed(s),
+    restart: () => d().restart(),
+    setSpeed: (s) => ctx.clock.setSpeed(Math.max(0.5, Math.min(8, +s || 1))),
     get time() { return d().time; },
     get duration() { return d().duration; },
     get playing() { return d().running && !ctx.clock.paused; },
     get scenario() { return d().scenario; },
-    list: async () => (await fetch('data/scenarios/index.json').then((r) => r.json())).scenarios,
+    list: async () => (idx ||= (await fetch('data/scenarios/index.json').then((r) => r.json())).scenarios),
   };
 }

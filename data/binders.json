@@ -1,0 +1,90 @@
+{
+  "lead": {
+    "summary": "Coordinating Pitchside work from 4F: intake, claims, D-proposals, and the review gate. Last session: triaged KAN-141 and opened the plan for KAN-142.",
+    "sections": [
+      { "title": "Active tasks", "items": ["KAN-147 Review gate + scripts/ci-local.sh", "Keep #decisions current (D-12..D-15)"] },
+      { "title": "Handoffs", "items": ["HANDOFF-2026-11-02.md ← Muse Code (preview-build scope)"] },
+      { "title": "Notes", "items": ["Two matching votes lock a D-proposal", "Always end with a 'Your call:' ask for anything irreversible"] }
+    ]
+  },
+  "codex": {
+    "summary": "Engineering seat (AI-wiring). Last session: odds feed retry (KAN-139) merged; started the theme token work.",
+    "sections": [
+      { "title": "Active tasks", "items": ["KAN-143 Theme tokens (packages/theme/*)", "KAN-139 Odds feed retry: merged, follow-up tests"] },
+      { "title": "Handoffs", "items": ["HANDOFF-2026-11-02.md → Cursor (OddsHeader layout)"] },
+      { "title": "Notes", "items": ["Scope: packages/odds/feed.ts + tests, packages/theme/*", "Run scripts/ci-local.sh before every PR"] }
+    ]
+  },
+  "musecode": {
+    "summary": "Product strategy on the Design seat. Last session: scoped the Friday preview build and wrote the flag rollout notes.",
+    "sections": [
+      { "title": "Active tasks", "items": ["KAN-146 Flag theme_v2 (config/flags.json)", "Preview build scope for Friday"] },
+      { "title": "Handoffs", "items": ["HANDOFF-2026-11-02.md → Lead (preview-build scope)"] },
+      { "title": "Notes", "items": ["Default to system appearance; no per-user sync in v1"] }
+    ]
+  },
+  "muse": {
+    "summary": "Fit and geometry research on the Design pod. Last session: compared three card layouts for the odds list.",
+    "sections": [
+      { "title": "Active tasks", "items": ["Empty-state illustration (KAN-152)", "Card spacing audit, 4 / 8 / 12 grid"] },
+      { "title": "Notes", "items": ["Layout A (dense) tested best on small phones"] }
+    ]
+  },
+  "grok": {
+    "summary": "Device and QA on the Mobile seat. Last session: iPhone SE + Pixel 6 matrix for the odds screen.",
+    "sections": [
+      { "title": "Active tasks", "items": ["KAN-145 Contrast QA (apps/mobile/e2e/*)", "Flaky e2e smoke triage"] },
+      { "title": "Handoffs", "items": ["HANDOFF-2026-11-01.md ← Codex (feed retry test hooks)"] },
+      { "title": "Notes", "items": ["Risk: green/red odds chips lose contrast on dark", "Two chips under 4.5:1 before the token fix"] }
+    ]
+  },
+  "cursor": {
+    "summary": "UI build seat. Last session: header layout polish; prepared a stub ThemeToggle.",
+    "sections": [
+      { "title": "Active tasks", "items": ["KAN-144 ThemeToggle + OddsHeader (src/ui/*)"] },
+      { "title": "Handoffs", "items": ["HANDOFF-2026-11-03.md ← Codex (tokens + useTheme merged)"] },
+      { "title": "Notes", "items": ["Do not touch packages/theme; ask Codex", "Touch targets 44 px minimum"] }
+    ]
+  },
+  "argon": {
+    "summary": "Reviewer and final gate. Last session: gated PR #209 (feed retry) with two findings, both fixed.",
+    "sections": [
+      { "title": "Review summary", "items": ["PR #209: 2 findings (1 med, 1 low), both fixed", "PR #214: pending"] },
+      { "title": "Notes", "items": ["Wants contract tests for every shared hook", "Evidence goes on the 3F corkboard"] }
+    ]
+  },
+  "chatgpt": {
+    "summary": "Connector and research. Pulls thread context into the plan. Last session: summarised requester notes for KAN-142.",
+    "sections": [
+      { "title": "Active tasks", "items": ["Thread context for KAN-142", "Open question log (per-user vs per-device)"] },
+      { "title": "Notes", "items": ["Settings screen is out of scope for v1"] }
+    ]
+  },
+  "reva": {
+    "summary": "Review subagent A (correctness and state). Spawned per PR; works in Conference Room A.",
+    "sections": [
+      { "title": "Review summary", "items": ["No review run yet this session"] },
+      { "title": "Notes", "items": ["Focus: state, storage, tokens", "Reports separately from Review B"] }
+    ]
+  },
+  "revb": {
+    "summary": "Review subagent B (UI, a11y, performance). Spawned per PR; works in Conference Room B.",
+    "sections": [
+      { "title": "Review summary", "items": ["No review run yet this session"] },
+      { "title": "Notes", "items": ["Focus: accessibility, re-renders, touch targets", "Reports separately from Review A"] }
+    ]
+  },
+  "ops": {
+    "summary": "Runs scripts/ci-local.sh at the 2F CI wall and reports job results.",
+    "sections": [
+      { "title": "Active tasks", "items": ["Watch for PRs labelled ready-for-ci"] },
+      { "title": "Notes", "items": ["Jobs: lint, typecheck, unit tests, theme snapshots, a11y audit, e2e smoke", "Last full run: 6/6 green in 41 s"] }
+    ]
+  },
+  "scout": {
+    "summary": "Research subagent spawned by the lead for quick prior-art digs.",
+    "sections": [
+      { "title": "Notes", "items": ["Platform guidance: follow system appearance, remember an override"] }
+    ]
+  }
+}
