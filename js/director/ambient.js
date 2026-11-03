@@ -1,6 +1,6 @@
 // Ambient office life: runs only for agents the scenario (or a command) has NOT claimed, and yields instantly when one is claimed.
 // Activities: coffee runs, water-cooler banter pairs, stretching, plant watering, naps -> hot desk, standup bubbles, desk mutters.
-import { BANTER, STRETCH, PLANT, DESK_MUTTER, TASKS, STANDUP } from './lines.js';
+import { BANTER, STRETCH, PLANT, DESK_MUTTER, TASKS, STANDUP, WAKE } from './lines.js';
 
 export function createAmbient(ctx, rt, actions, isClaimed) {
   const { clock } = ctx;
@@ -94,10 +94,12 @@ export function createAmbient(ctx, rt, actions, isClaimed) {
     }, [25, 60]),
 
     nap: (a) => begin([a.id], 'nap', async (tk) => {
+      // hot-desking after a nap only follows finished work (the scenario's wrap-up); otherwise the bot walks back to its OWN desk
       const after = status(rt.view(a.id)) === 'finished';
-      await actions.nap(a.id, tk, { hotDesk: true, task: after ? 'Hot desk: wrapping up notes' : undefined });
+      await actions.nap(a.id, tk, { hotDesk: after, task: after ? 'Hot desk: wrapping up notes' : undefined });
       if (tk.cancelled) return;
-      await rt.sleep(rt.rand(25, 45), tk);
+      if (after) await rt.sleep(rt.rand(25, 45), tk);
+      else { rt.say(a.id, rt.pick(WAKE), { ms: 2800, log: false }); await rt.sleep(1.5, tk); }
       if (!tk.cancelled) { await rt.go(a.id, 'home', tk); if (!tk.cancelled) rt.status(a.id, 'working', rt.pick(TASKS), { log: false }); }
     }, [40, 90]),
 

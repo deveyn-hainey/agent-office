@@ -1,7 +1,7 @@
 // Generates data/world.json (S0 owns). Run: node scripts/gen-world.mjs
 // Conventions: floor index 0 = 1F. Coordinates are floor-local, origin = floor centre, +x right, +z toward viewer.
 // facing/rot = yaw in radians, 0 faces +z, PI/2 faces +x, PI faces -z, -PI/2 faces -x  (dir = (sin, cos)).
-import { writeFileSync } from 'node:fs';
+import { writeFileSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
@@ -35,10 +35,11 @@ const surf = (fi, id, kind, x, y, z, w, h, rot) =>
 const face = (fx, fz, tx, tz) => Math.atan2(tx - fx, tz - fz);
 
 // desk helper: user sits at (cx,cz) facing `facing`; desk sits 1.45 ahead of the chair.
-function deskSeat(fi, id, cx, cz, facing, roomId, extra = {}) {
+function deskSeat(fi, id, cx, cz, facing, roomId, extra = {}, kind = 'desk') {
   const dx = Math.sin(facing) * 1.45, dz = Math.cos(facing) * 1.45;
-  furn(fi, 'desk', cx + dx, cz + dz, facing, 3.0, 1.4, 1.0, { id: `${id}-furn`, seat: extra.seat });
-  slot(fi, id, 'desk', cx, cz, facing, roomId, extra);
+  furn(fi, 'desk', cx + dx, cz + dz, facing, 3.0, 1.4, 1.0, { id: `${id}-furn`, seat: extra.seat, ...(kind === 'operator' ? { human: extra.human } : {}) });
+  const { human, ...slotExtra } = extra;
+  slot(fi, id, kind, cx, cz, facing, roomId, slotExtra);
 }
 function sofa(fi, id, x, z, roomId) {
   furn(fi, 'sofa', x, z, 0, 3.2, 1.5, 0.9, { id: `${id}-furn` });
@@ -92,7 +93,6 @@ for (const f of floors) {
   furn(fi, 'coffeetable', -15.7, 11.6, 0, 1.6, 1.0, 0.5, {});
   furn(fi, 'rug', -15.7, 10.6, 0, 11, 4.4, 0.04, { solid: false, color: '#e3d9f5', id: 'rug-4f-lounge' });
   furn(fi, 'plant', -20.6, 12.6, 0, 1, 1, 1.8, { shape: 'round', r: 0.5 });
-  furn(fi, 'plant', 20.4, 12.4, 0, 1, 1, 1.8, { shape: 'round', r: 0.5 });
   furn(fi, 'plant', -20.6, -12.4, 0, 1, 1, 1.8, { shape: 'round', r: 0.5 });
   room(fi, 'huddle', 'Huddle circle', cx, cz, 11, 10);
   room(fi, 'whiteboard', 'Whiteboard', -11, -10.5, 13, 4);
@@ -100,6 +100,21 @@ for (const f of floors) {
   room(fi, 'lead', 'Lead desk', -18, 2, 5, 5.5);
   room(fi, 'connectors', 'Connector desks', 13, 4.8, 12, 4.2);
   room(fi, 'lounge', 'Lounge corner', -15.7, 10.3, 11, 5.4);
+  // Operator Room: low glass partition (front, right, left, back with an open doorway) + three HUMAN desks (facing the viewer like the bots' desks).
+  // Humans are not agents: slots are kind 'operator' (no agent reserves them); props.js draws a chair + operators.js the figure.
+  {
+    const x0 = 6.8, x1 = 21.4, zb = 7.9, zf = 13.4, h = 2.4;
+    const gw = { thick: 0.12, h };
+    wall(fi, 'glass-op-front', 'glass', x0, zf, x1, zf, gw);
+    wall(fi, 'glass-op-right', 'glass', x1, zb, x1, zf, gw);
+    wall(fi, 'glass-op-left', 'glass', x0, zb, x0, zf, gw);
+    wall(fi, 'glass-op-back', 'glass', x0, zb, x1, zb, { ...gw, gaps: [{ from: 12.8, to: 15.2 }] });
+    room(fi, 'operator', 'Operator Room', (x0 + x1) / 2, (zb + zf) / 2, x1 - x0, zf - zb, { glass: true });
+    furn(fi, 'rug', (x0 + x1) / 2, (zb + zf) / 2, 0, x1 - x0 - 0.8, zf - zb - 0.8, 0.04, { solid: false, color: '#ece6f6', id: 'rug-4f-operator' });
+    [['op-4f-1', 10.4, 'Operator'], ['op-4f-2', 14.1, 'PM'], ['op-4f-3', 17.8, 'Reviewer (human)']].forEach(([id, x, who]) =>
+      deskSeat(fi, id, x, 9.4, 0, 'operator', { seat: who, human: who }, 'operator'));
+    furn(fi, 'plant', 8.0, 8.9, 0, 1, 1, 1.8, { shape: 'round', r: 0.5 });
+  }
 }
 
 // ---------- 3F Review (index 2) ----------
@@ -128,6 +143,9 @@ for (const f of floors) {
   }
   // reviewer home desk + evidence corkboard on the left wall
   deskSeat(fi, 'desk-3f-argon', -15, 4.5, 0, 'reviewer');
+  deskSeat(fi, 'desk-3f-reva', -11.2, 4.5, 0, 'reviewer');
+  deskSeat(fi, 'desk-3f-revb', -7.4, 4.5, 0, 'reviewer');
+  deskSeat(fi, 'desk-3f-4', -3.6, 4.5, 0, 'reviewer');   // spare
   surf(fi, 'cork-3f', 'corkboard', -HW + 0.07, 3.4, 7.5, 7, 3.8, H);
   slot(fi, 'corkboard-3f', 'corkboard', -19.8, 7.5, -H, 'evidence');
   furn(fi, 'bookshelf', -HW + 0.4, 1, H, 2.6, 0.7, 2.6, {});
@@ -137,9 +155,9 @@ for (const f of floors) {
   furn(fi, 'coffeetable', 12.3, 10.6, 0, 1.6, 1.0, 0.5, {});
   furn(fi, 'rug', 12.3, 9.6, 0, 11, 4.4, 0.04, { solid: false, color: '#d4ecd9', id: 'rug-3f-lounge' });
   furn(fi, 'plant', 20.4, 12.4, 0, 1, 1, 1.8, { shape: 'round', r: 0.5 });
-  furn(fi, 'plant', -8, 0.2, 0, 1, 1, 1.8, { shape: 'round', r: 0.5 });
+  furn(fi, 'plant', -9.4, 0.4, 0, 1, 1, 1.8, { shape: 'round', r: 0.5 });
   furn(fi, 'clock', 9, -13.9, 0, 1.4, 0.1, 1.4, { solid: false, y: 5.3, id: 'clock-3f' });
-  room(fi, 'reviewer', 'Reviewer desk', -15, 5, 6, 5);
+  room(fi, 'reviewer', 'Review pod', -9.3, 5.2, 15.4, 5);
   room(fi, 'evidence', 'Evidence board', -19.2, 7.5, 4.6, 8.5);
   room(fi, 'lounge', 'Lounge', 12.3, 9.8, 11, 5.4);
 }
@@ -150,11 +168,16 @@ for (const f of floors) {
   // pods: [id, label, px, pz]
   const pods = [['mac', 'Mac app', -12, 1.5], ['mobile', 'Mobile', -3, 1.5], ['ai', 'AI-wiring', 6, 1.5], ['design', 'Design', -8, 9.5], ['ui', 'UI', 1, 9.5]];
   for (const [id, label, px, pz] of pods) {
-    room(fi, `pod-${id}`, label, px, pz, 8.5, 5.6, { seat: label });
+    room(fi, `pod-${id}`, label, px, pz, 8.5, 5.6, { seat: label, annot: false });
     furn(fi, 'rug', px, pz, 0, 8, 5, 0.04, { solid: false, color: '#d3e4f6', id: `rug-2f-${id}` });
     deskSeat(fi, `desk-2f-${id}-1`, px - 2, pz - 1, 0, `pod-${id}`, { seat: label });
     deskSeat(fi, `desk-2f-${id}-2`, px + 2, pz - 1, 0, `pod-${id}`, { seat: label });
   }
+  // ops pod (CI runner's own desk + a spare) right of the AI-wiring pod
+  furn(fi, 'rug', 16.5, 1.1, 0, 8, 5, 0.04, { solid: false, color: '#d3e4f6', id: 'rug-2f-ops' });
+  deskSeat(fi, 'desk-2f-ops-1', 14.5, 0, 0, 'pod-ops', { seat: 'Ops' });
+  deskSeat(fi, 'desk-2f-ops-2', 18.5, 0, 0, 'pod-ops', { seat: 'Ops' });
+  room(fi, 'pod-ops', 'Ops', 16.5, 1.1, 8.5, 5.6, { seat: 'Ops', annot: false });
   // back wall: team whiteboard | jira | CI wall | rack
   surf(fi, 'board-2f', 'whiteboard', -16, 3.6, -13.93, 10, 4.4, 0);
   surf(fi, 'jira-2f', 'jira', -6.5, 3.6, -13.93, 10, 4.4, 0);
@@ -228,6 +251,24 @@ for (const f of floors) {
   room(fi, 'reception', 'Reception', -17.5, 6.2, 6.5, 7.5);
   room(fi, 'naps', 'Nap sofas', 0, 10, 16.5, 5);
   room(fi, 'hot', 'Hot desks', 16, 6, 9, 9);
+}
+
+// ---------- desk nameplates (data/team.json decides who owns which desk) ----------
+// Every desk furniture item gets `plate:{name, sub?, open?|hot?|human?}`; props.js renders it as a small white plaque with a berry edge.
+{
+  const team = JSON.parse(readFileSync(join(dirname(fileURLToPath(import.meta.url)), '..', 'data', 'team.json'), 'utf8'));
+  const owner = new Map(team.agents.map((a) => [a.home, a]));
+  const slotKind = new Map(slots.map((s) => [s.id, s]));
+  for (const f of furniture) {
+    if (f.type !== 'desk') continue;
+    const sid = f.id.replace(/-furn$/, '');
+    const a = owner.get(sid), sl = slotKind.get(sid);
+    if (f.human) { f.plate = { name: f.human, sub: 'Human', human: true }; delete f.human; }
+    else if (a) f.plate = { name: a.name.replace(/\s*\(.*?\)\s*/g, '').trim(), sub: a.seat };
+    else if (sl?.hot) f.plate = { name: 'Hot desk', sub: 'Drop-in', hot: true };
+    else f.plate = { name: 'Open desk', sub: 'New bot', open: true };
+  }
+  for (const a of team.agents) if (!slotKind.has(a.home)) console.warn('team home slot missing:', a.id, a.home);
 }
 
 const world = {

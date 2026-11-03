@@ -12,6 +12,7 @@ import { buildCore, createElevator, STAIR } from './core.js';
 import { createSurfaces } from './surfaces.js';
 import { createLighting } from './lighting.js';
 import { createFx } from './fx.js';
+import { createOperators } from './operators.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 
 const FADE = 0.35;
@@ -334,8 +335,10 @@ export function createWorld(ctx) {
   // pending mural completion
   let muralWait = null;
 
+  const operators = createOperators({ ctx, T, floorGroups, group, floorY, setDeskScreen });
+
   const world = {
-    data, group, THREE: T,
+    data, group, THREE: T, operators,
     floorGroup: (i) => floorGroups[i],
     floorY, toWorld,
     slot: (id) => withWorld(slotMap.get(id)),

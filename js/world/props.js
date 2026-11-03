@@ -100,7 +100,11 @@ export function buildProps(env) {
       for (let i = 0; i < 2; i++) { b.box(0.7, 0.3, 0.03, '#ffffff', left * (w / 2 - 0.6), 0.34 + i * 0.36, d / 2 - 0.1, 0, true); b.box(0.2, 0.04, 0.04, INK, left * (w / 2 - 0.6), 0.36 + i * 0.36, d / 2 - 0.07, 0, false); }
       // desk-top clutter
       const kind = r();
-      if (kind < 0.55) {
+      if (it.plate?.human) {
+        // human operator desk: no monitor (operators.js adds a lit prompt console), just a keyboard + mouse
+        b.box(0.9, 0.03, 0.3, '#e4e5e8', 0, h + 0.015, -0.3);
+        b.box(0.12, 0.025, 0.18, '#e4e5e8', 0.7, h + 0.013, -0.3);
+      } else if (kind < 0.55) {
         // monitor on a stand, laptop beside
         b.box(0.5, 0.03, 0.28, '#17181c', 0, h + 0.015, 0.1);
         b.box(0.08, 0.4, 0.06, '#17181c', 0, h + 0.2, 0.12);
@@ -131,8 +135,50 @@ export function buildProps(env) {
     const g = frameGroup(it);
     // the 2nd rng draw above decided monitor vs laptop
     const rr = rng(hash(it.id)); rr(); const k = rr();
-    if (k < 0.55) addScreen(slotId, g, 1.08, 0.6, 0, h + 0.7, 0.1);
+    if (it.plate?.human) { /* console is built by operators.js */ }
+    else if (k < 0.55) addScreen(slotId, g, 1.08, 0.6, 0, h + 0.7, 0.1);
     else addScreen(slotId, g, 0.84, 0.5, 0, h + 0.04 + 0.3 * Math.cos(0.38) + 0.0, 0.26 + 0.3 * Math.sin(0.38) - 0.0, 0.38, 0.02);
+    if (it.plate) nameplate(it, g);
+  }
+
+  /* ------------------------------ desk nameplates ------------------------------ */
+  // small white plaque with a berry edge, leaning on the desk edge that faces the iso camera. Own desk = bot name + seat;
+  // spare desks read "Open desk / New bot" (dashed, greyed); hot desks and the human operator desks are labelled too.
+  const plateMats = new Map();
+  const plateMat = (p) => {
+    const key = [p.name, p.sub, p.open, p.hot, p.human].join('|');
+    if (plateMats.has(key)) return plateMats.get(key);
+    const c = document.createElement('canvas'); c.width = 520; c.height = 156;
+    const g = c.getContext('2d');
+    const soft = p.open || p.hot;
+    g.fillStyle = '#ffffff'; g.fillRect(0, 0, 520, 156);
+    g.fillStyle = BERRY; g.fillRect(0, 0, 28, 156);
+    if (soft) { g.strokeStyle = '#c9a6bd'; g.lineWidth = 5; g.setLineDash([16, 12]); g.strokeRect(42, 12, 464, 132); g.setLineDash([]); }
+    g.textAlign = 'left'; g.textBaseline = 'middle';
+    const fit = (txt, px, wt, max) => { let f = px; do { g.font = `${wt} ${f}px Inter, system-ui, sans-serif`; f -= 2; } while (g.measureText(txt).width > max && f > 18); };
+    g.fillStyle = soft ? '#7a6572' : '#16171b';
+    fit(p.name, 92, 800, 450); g.fillText(p.name, 52, p.sub ? 60 : 80);
+    if (p.sub) { g.fillStyle = soft ? '#a28b99' : BERRY; fit(p.sub.toUpperCase(), 40, 700, 450); g.fillText(p.sub.toUpperCase(), 54, 122); }
+    const t = new T.CanvasTexture(c); t.colorSpace = T.SRGBColorSpace; t.anisotropy = 4;
+    const m = new T.MeshBasicMaterial({ map: t });
+    plateMats.set(key, m);
+    return m;
+  };
+  const plateGeo = { face: new T.PlaneGeometry(2.9, 0.87), edge: new T.BoxGeometry(2.97, 0.93, 0.05) };
+  const plateEdgeMat = new T.MeshBasicMaterial({ color: BERRY });
+  function nameplate(it, g) {
+    // desk-local +z = the direction the sitter faces (towards the desk's far edge). Pick the edge that looks at the camera (+x/+z).
+    const flip = Math.sin(it.rot || 0) + Math.cos(it.rot || 0) < 0;
+    const pl = new T.Group();
+    pl.userData.noPick = true;
+    const human = !!it.plate.human;   // operator desks: a smaller plaque at the right end so the lit console stays visible
+    pl.position.set(human ? 1.0 : 0, it.h + 0.02, (flip ? -1 : 1) * (it.d / 2 - 0.08));
+    if (human) pl.scale.setScalar(0.5);
+    pl.rotation.y = flip ? Math.PI : 0;
+    const tilt = new T.Group(); tilt.rotation.x = -0.5; tilt.position.y = 0.4;
+    const edge = new T.Mesh(plateGeo.edge, plateEdgeMat); edge.userData.noPick = true;
+    const face = new T.Mesh(plateGeo.face, plateMat(it.plate)); face.position.z = 0.03; face.userData.noPick = true;
+    tilt.add(edge, face); pl.add(tilt); g.add(pl);
   }
 
   /* ------------------------------ furniture types ------------------------------ */
@@ -470,7 +516,7 @@ export function buildProps(env) {
 
   // chairs at desk slots
   for (const s of data.slots) {
-    if (s.floor !== floor || s.kind !== 'desk') continue;
+    if (s.floor !== floor || (s.kind !== 'desk' && s.kind !== 'operator')) continue;
     const dir = [Math.sin(s.facing), Math.cos(s.facing)];
     chair(s.x - dir[0] * 0.12, s.z - dir[1] * 0.12, s.facing);
   }
@@ -540,11 +586,11 @@ export function buildProps(env) {
     },
     2: () => {   // 3F review
       floorLamp(20.9, 2.4); floorLamp(-20.9, 12.9);
-      bin(-12.0, 6.7); bin(21.0, -2.0, '#6b8e7f');
-      easel(-8.5, 5.0, 0.6);
+      bin(-18.4, 9.6); bin(21.0, -2.0, '#6b8e7f');
+      easel(-4.5, 11.0, 0.6);
     },
     3: () => {   // 4F strategy
-      floorLamp(-20.9, 6.4); floorLamp(20.9, 9.4);
+      floorLamp(-20.9, 6.4);
       bin(-16.6, 0.0, '#8d949e'); bin(20.9, 2.2);
       easel(-3.4, -5.6, 0.45);
     },

@@ -219,7 +219,7 @@ export function createOverlays(ctx, store) {
     const b = e.target.closest('[data-sm]');
     if (e.target === sc || b?.dataset.sm === 'close') return hideSummary();
     if (b?.dataset.sm === 'again') { hideSummary(); ctx.replay?.seek?.(0); ctx.replay?.play?.(); }
-    if (b?.dataset.sm === 'free') { hideSummary(); ctx.director?.reset?.(); ctx.director?.setAmbient?.(true); clock.play(); bus.emit('ui:scenario', { title: '' }); }
+    if (b?.dataset.sm === 'free') { hideSummary(); if (ctx.director?.freePlay) ctx.director.freePlay(); else { ctx.director?.reset?.(); ctx.director?.setAmbient?.(true); } clock.play(); bus.emit('ui:scenario', { title: '' }); }
   });
   ['replay:load', 'replay:reset', 'replay:seek'].forEach((e) => bus.on(e, hideSummary));
 

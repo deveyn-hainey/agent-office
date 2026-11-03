@@ -19,7 +19,7 @@ const ALIASES = {
   scout: ['scout'],
 };
 const SELECTED_WORDS = /\b(that one|this one|that agent|this agent|the selected one|selected agent|them|him|her|they|it)\b/i;
-const EVERYONE = /\b(everyone|everybody|all of (?:us|you|them)|all hands|the (?:whole )?team|all agents|all)\b/i;
+const EVERYONE = /\b(everyone|everybody|all of (?:us|you|them)|all hands|the (?:whole )?team(?! ?(?:white ?)?board)|all agents)\b|\ball\s*[.!]?\s*$/i;
 const esc = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 // longest alias first so "muse code" wins over "muse"
@@ -127,8 +127,8 @@ export function parseCommand(rawText, opts = {}) {
   const go = has(GO_VERB);
 
   if (/^\s*(?:help|\?|commands|what can (?:you|i) (?:do|say))\b/i.test(raw)) return done('help');
-  if (has(/\b(?:approve|approved|ship it|lgtm|green[- ]?light|go ahead|yes please|merge it)\b/i)) { out.choice = 'Approve'; return done('approve'); }
-  if (has(/^\s*(?:skip|reject|decline|not now|no)\b/i) || has(/\bskip (?:it|that|this)\b/i)) { out.choice = 'Skip'; return done('skip'); }
+  if (has(/\b(?:approve|approved|ship it|lgtm|green[- ]?light|yes please|merge it)\b/i) || has(/^\s*go ahead\s*[.!]?\s*$/i)) { out.choice = 'Approve'; return done('approve'); }
+  if (has(/^\s*(?:no|skip|reject|decline|not now)\W*$/i) || has(/\bskip (?:it|that|this|the ask)\b/i)) { out.choice = 'Skip'; return done('skip'); }
   if (has(/\breview(?:ing)?\b/i) && (out.pr || has(/\b(?:pr|pull request|code)\b/i)) && !has(/\bpresent\b/i)) return done('review');
   if (has(/\b(?:draw|paint|sketch|stencil|doodle)\b/i) || (has(/\bwrite\b.+\bon\b.+\bwall\b/i))) { out.text = drawText(raw); out.place = findPlace(raw) || { key: 'mural', spec: 'free:mural-1f', label: 'the lobby mural wall' }; return done('draw'); }
   if (has(/\b(?:run|start|kick\s?off|trigger|rerun|re-run|launch)\b.*\b(?:ci|tests?|pipeline|checks|build)\b/i) || has(/^\s*ci\b/i) || has(/\blocal ci\b/i)) return done('ci');

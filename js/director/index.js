@@ -106,7 +106,7 @@ export function createDirector(ctx) {
       return scenario;
     },
 
-    reset() {
+    reset(o = {}) {
       sceneToken.cancel();
       sceneToken = rt.token();
       commands.cancelAll();
@@ -114,7 +114,7 @@ export function createDirector(ctx) {
       cursor = 0; next = 0; blocked = null; ended = false; totalBlocked = 0;
       asks.clear();
       claimed.clear();
-      scenario?.agents?.forEach((id) => claimed.add(id));
+      if (o.claim !== false) scenario?.agents?.forEach((id) => claimed.add(id));
       stats.agents.clear(); stats.findings = 0; stats.asks = 0;
       binders = clone(pristineBinders);
       hideSummary();
@@ -133,6 +133,8 @@ export function createDirector(ctx) {
       clock.play();
     },
     pause() { clock.pause(); bus.emit('replay:pause', {}); },
+    // Free play: back to a clean office with nobody claimed, so ambient life runs for everyone
+    freePlay() { running = false; scenario = null; events = []; director.reset({ claim: false }); ambient.set(true); },
     restart() { director.seek(0); director.play(); },
 
     seek(t) {

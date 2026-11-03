@@ -159,7 +159,7 @@ export function createControls(ctx, store, api, panels, feeds) {
 
   async function loadScenario(key, { quiet } = {}) {
     if (key === 'free') {
-      ctx.director?.reset?.(); ctx.director?.setAmbient?.(true);
+      if (ctx.director?.freePlay) ctx.director.freePlay(); else { ctx.director?.reset?.(); ctx.director?.setAmbient?.(true); }
       chapters = []; duration = 0; setScenarioMeta({ chapters: [], duration: 0 });
       bus.emit('ui:scenario', { title: '' });
       clock.play(); paintTransport(); return true;

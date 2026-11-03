@@ -24,7 +24,8 @@ export function createCommands(ctx, rt, actions, hooks) {
   }
 
   async function command(text, { from = 'You' } = {}) {
-    text = String(text || '').trim();
+    text = String(text || '').trim().slice(0, 240);
+    if (clock.paused) clock.play();   // command timers and walks run on sim time: never leave a command hanging while paused
     bus.emit('command:submitted', { text });
     rt.slack(from, text, { you: true });
     rt.activity('you', text, 'command');
@@ -47,7 +48,12 @@ export function createCommands(ctx, rt, actions, hooks) {
     actors = actors.filter((id) => rt.team.has(id));
     const needsActor = ['go', 'nap', 'coffee', 'cheer'].includes(p.intent);
 
-    rt.camera({ type: 'floor', floor: 3 }); // the request lands on the 4F whiteboard
+    // a human operator (4F Operator Room) types the prompt; the line goes to the target bot, or to the whiteboard when there is none
+    const target = actors.find((id) => rt.visible(id)) || null;
+    bus.emit('operator:prompt', { text, target: ['approve', 'skip'].includes(p.intent) ? null : target, who: 'Operator' });
+
+    // the request lands on the 4F whiteboard (don't yank the camera out of desk view, and approvals don't need a shot)
+    if (ctx.cam?.getView?.()?.type !== 'desk' && !['approve', 'skip'].includes(p.intent)) rt.camera({ type: 'floor', floor: 3 });
     onBoardFloor.concat(actors.filter((a) => rt.visible(a))).forEach((id) => rt.look(id, 'surface:board-4f'));
     rt.say('lead', '', { style: 'think', ms: 1600, log: false });
 

@@ -71,6 +71,11 @@ Free text, case-insensitive; names are roster names (Lead, Codex, Muse Code, Mus
 
 Each command: request card on the 4F whiteboard + "You" line in chat → heads turn → Lead acks → agent acts → card marked done. The desk-view chat box sends `tell <name> …`.
 
+## Desks & the Operator Room
+- Every bot in `data/team.json` has its **own desk** (its `home` slot) with a small white **nameplate** (berry edge) showing its name and seat. Bots go back to *their own* desk after coffee, chats, naps and scenarios; hot-desking on 1F only happens after a nap that follows finished work.
+- **Spare desks** are labelled **"Open desk / New bot"** (2F Mac-app pod, spare seats in the other pods, the Ops pod, 3F review row, 4F connector row) — add a bot by pointing its `home` at one of them.
+- The **Operator Room** (4F, front right, low glass partition) seats three *human* figures — **Operator**, **PM**, **Reviewer (human)** — matte grey capsule bodies with headsets, deliberately unlike the glossy bots. Sending a command makes the Operator type (their console lights up), shows the prompt in a white pill and sends a dotted line + paper-plane to the target bot (or the 4F whiteboard). Approvals show "Approved ✓" over the Reviewer; the scripted "You" message is the PM. All local; nothing is sent anywhere.
+
 ## Architecture
 ```
 index.html            import map + DOM regions (#stage, #ui-root > panels, #command-box …)

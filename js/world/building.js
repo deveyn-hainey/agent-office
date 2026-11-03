@@ -144,10 +144,11 @@ export function buildGlass(env) {
   const walls = data.walls.filter((w) => w.floor === floor && w.kind === 'glass');
   if (!walls.length) return;
   const glassB = new env.Batch(T);   // pane geometry (no outlines)
-  const H = data.wallHeight;
+  const H0 = data.wallHeight;
   const frame = mix(BERRY, '#ffffff', 0.78);
   const doors = [];
   for (const w of walls) {
+    const H = w.h || H0;   // low partitions (Operator Room) set their own height
     const horiz = w.z1 === w.z2;
     const a = Math.min(horiz ? w.x1 : w.z1, horiz ? w.x2 : w.z2), z = horiz ? w.z1 : w.x1;
     const e = Math.max(horiz ? w.x1 : w.z1, horiz ? w.x2 : w.z2);
@@ -178,6 +179,7 @@ export function buildGlass(env) {
         b.box(0.1, H, 0.18, frame, U(gp.to), H / 2, 0, 0, false);
         b.box(gw + 0.2, 0.05, 0.3, '#c9ccd2', U(cx), 0.03, 0, 0, false);    // threshold
       });
+      if (!gp.door) continue;   // plain doorway: no leaf, no sign
       // sliding leaf (animated)
       const longer = (gp.from - a) >= (e - gp.to) ? -1 : 1;   // slide toward the longer wall piece
       const leaf = new T.Group();
