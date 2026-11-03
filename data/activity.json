@@ -1,5 +1,20 @@
 [
   {
+    "time": "2026-11-03T18:40:57Z",
+    "agent": "claude",
+    "text": "Claude hit its 5-hour usage limit; all sessions paused until 12:50 PM MT"
+  },
+  {
+    "time": "2026-11-03T18:40:57Z",
+    "agent": "boo",
+    "text": "Boo stopped the live Slack office build at Deveyn's request; nothing pushed"
+  },
+  {
+    "time": "2026-11-03T18:40:57Z",
+    "agent": "jo",
+    "text": "Jo paused both Claude jobs when Claude usage ran out; Body-Pose fitting built but not pushed"
+  },
+  {
     "time": "2026-11-03T17:33:22Z",
     "agent": "jo",
     "text": "rondo-coach combined app committed locally, local deploy checks pass"
