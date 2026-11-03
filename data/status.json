@@ -1,5 +1,5 @@
 {
-  "updated": "2026-11-03T17:10:40Z",
+  "updated": "2026-11-03T17:33:22Z",
   "agents": {
     "info": {
       "state": "finished",
@@ -28,8 +28,8 @@
     },
     "jo": {
       "state": "working",
-      "task": "Building the combined Rondo + Coach Rules app in a new private rondo-coach repo and Space",
-      "updated": "2026-11-03T17:10:40Z"
+      "task": "rondo-coach combined app built and tested locally in 9 commits; not deployed yet",
+      "updated": "2026-11-03T17:33:22Z"
     },
     "po": {
       "state": "idle",
@@ -38,13 +38,13 @@
     },
     "claude": {
       "state": "working",
-      "task": "Coding rondo-coach for Jo and the Agent Office v2 desks and decor update",
-      "updated": "2026-11-03T17:10:40Z"
+      "task": "Running a read-only SOMA body-fit spike on video-test and finishing Agent Office v2 decor",
+      "updated": "2026-11-03T17:33:22Z"
     },
     "boo": {
       "state": "working",
-      "task": "Agent Office v2 is up as PR #1; now adding bot desks, a prompt room and berry decor",
-      "updated": "2026-11-03T17:10:40Z"
+      "task": "Agent Office v2: own desks, operator room and natural wood-and-plants decor done; integrating into PR #1",
+      "updated": "2026-11-03T17:33:22Z"
     }
   }
 }
