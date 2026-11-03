@@ -2,6 +2,7 @@
 // glass conference rooms with sliding doors, dotted room annotations.
 import { shade, mix } from './batch.js';
 
+export const BERRY = '#870b64';
 const CAP = '#fafafb', WHITE = '#ffffff', WALL = '#dedfe3', STRIP = '#121316';
 export const BASE_H = 12;
 const SANS = 'Inter,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif';
@@ -51,11 +52,18 @@ export function buildShell(env) {
   group.add(band);
   {
     const sh = bandH / storeys, stripH = storeys > 1 ? sh - 1.4 : bandH - 1.0;
-    const nW = Math.floor((xmax - xmin) / 1.05), nD = Math.floor((zmax - zmin) / 1.05);
+    // sparse window groups: a few bands per face with generous white wall between them
+    const spacing = 1.7, grp = floor === 0 ? [[0.27, 2], [0.73, 2]] : [[0.5, 2]];
+    const faceGroups = (len, lo) => {
+      const out = [];
+      for (const [f, n] of grp) for (let i = 0; i < n; i++) out.push(lo + len * f + (i - (n - 1) / 2) * spacing);
+      return out;
+    };
+    const xs = faceGroups(xmax - xmin, xmin), zs = faceGroups(zmax - zmin, zmin);
     for (let st = 0; st < storeys; st++) {
       const cy = -TH - bandH + st * sh + sh / 2;
-      for (let j = 0; j < nW; j++) b.box(0.55, stripH, 0.06, STRIP, xmin + (j + 0.5) * ((xmax - xmin) / nW), cy, zmax + 0.02, 0, false);
-      for (let j = 0; j < nD; j++) b.box(0.06, stripH, 0.55, STRIP, xmax + 0.02, cy, zmin + (j + 0.5) * ((zmax - zmin) / nD), 0, false);
+      for (const x of xs) b.box(0.55, stripH, 0.06, STRIP, x, cy, zmax + 0.02, 0, false);
+      for (const z of zs) b.box(0.06, stripH, 0.55, STRIP, xmax + 0.02, cy, z, 0, false);
     }
     // thin accent line along the slab edge (very faint floor tint)
     b.box(xmax - xmin, 0.12, 0.05, mix(accent, '#ffffff', 0.35), (xmin + xmax) / 2, -TH + 0.0 - 0.06, zmax + 0.03, 0, false);
@@ -70,7 +78,7 @@ export function buildShell(env) {
   /* ---------- back walls ---------- */
   const wt = 0.5;
   const backLen = xmax - xmin, leftLen = zmax - zmin;
-  const dado = shade(WALL, -0.05), tint = mix(accent, '#ffffff', 0.45);
+  const dado = shade(WALL, -0.05), tint = mix(BERRY, '#ffffff', 0.25);
   // back wall (z from -14.4 to -13.9)
   b.box(backLen, H, wt, WALL, (xmin + xmax) / 2, H / 2, zmin + wt / 2, 0, false);
   b.box(backLen - 0.02, 1.15, wt + 0.02, dado, (xmin + xmax) / 2, 0.575, zmin + wt / 2, 0, false);
@@ -113,7 +121,7 @@ export function buildShell(env) {
     const c = document.createElement('canvas'); c.width = 840; c.height = 160;
     const g = c.getContext('2d');
     g.fillStyle = '#ffffff'; rr(g, 4, 4, 832, 152, 40); g.fill();
-    g.fillStyle = '#16171b'; rr(g, 22, 22, 116, 116, 30); g.fill();
+    g.fillStyle = BERRY; rr(g, 22, 22, 116, 116, 30); g.fill();
     g.fillStyle = '#ffffff'; g.font = `700 74px ${SANS}`; g.textAlign = 'center'; g.textBaseline = 'middle';
     g.fillText(String(f.number), 80, 82);
     g.fillStyle = accent; g.beginPath(); g.arc(176, 80, 12, 0, 7); g.fill();
@@ -137,7 +145,7 @@ export function buildGlass(env) {
   if (!walls.length) return;
   const glassB = new env.Batch(T);   // pane geometry (no outlines)
   const H = data.wallHeight;
-  const frame = '#eef0f3';
+  const frame = mix(BERRY, '#ffffff', 0.78);
   const doors = [];
   for (const w of walls) {
     const horiz = w.z1 === w.z2;

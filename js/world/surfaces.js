@@ -149,15 +149,15 @@ function starPts(cx, cy, R) { const p = []; for (let i = 0; i <= 10; i++) { cons
 
 /* ---------------------------------------------------------------- frames */
 const SPEC = {
-  whiteboard: { bw: 0.12, color: '#eceef1', depth: 0.16, back: '#ffffff' },
-  voteboard: { bw: 0.14, color: '#eceef1', depth: 0.16, back: '#ffffff' },
-  jira: { bw: 0.08, color: '#eceef1', depth: 0.14, back: '#f4f5f7' },
-  ciwall: { bw: 0.2, color: '#1b1c20', depth: 0.22, back: '#16181d' },
-  xray: { bw: 0.16, color: '#1b1c20', depth: 0.2, back: '#13161b' },
-  slack: { bw: 0.14, color: '#eceef1', depth: 0.16, back: '#ffffff' },
+  whiteboard: { bw: 0.12, color: '#e6c8da', depth: 0.16, back: '#ffffff' },
+  voteboard: { bw: 0.14, color: '#e6c8da', depth: 0.16, back: '#ffffff' },
+  jira: { bw: 0.08, color: '#e6c8da', depth: 0.14, back: '#f4f5f7' },
+  ciwall: { bw: 0.2, color: '#3b0a2e', depth: 0.22, back: '#16181d' },
+  xray: { bw: 0.16, color: '#3b0a2e', depth: 0.2, back: '#13161b' },
+  slack: { bw: 0.14, color: '#e6c8da', depth: 0.16, back: '#ffffff' },
   mural: { bw: 0, color: '#ffffff', depth: 0.08, back: '#ffffff' },
-  confscreen: { bw: 0.14, color: '#1b1c20', depth: 0.18, back: '#16181d' },
-  corkboard: { bw: 0.12, color: '#eceef1', depth: 0.14, back: '#eceef1' },
+  confscreen: { bw: 0.14, color: '#3b0a2e', depth: 0.18, back: '#16181d' },
+  corkboard: { bw: 0.12, color: '#d9b1cb', depth: 0.14, back: '#eceef1' },
 };
 
 export function createSurfaces({ THREE, bus, clock, defs, floorGroups, lineMat, team, getState }) {
@@ -945,8 +945,8 @@ export function createSurfaces({ THREE, bus, clock, defs, floorGroups, lineMat, 
   // ---- MURAL
   DRAW.mural = (S, ) => {
     const c = S.ctx, W = S.W, H = S.H, st = S.state;
-    c.fillStyle = '#ffffff'; c.fillRect(0, 0, W, H);
-    c.setLineDash([3, 10]); c.lineCap = 'round'; c.strokeStyle = '#dfe2e7'; c.lineWidth = 3;
+    c.fillStyle = '#f7e9f2'; c.fillRect(0, 0, W, H);
+    c.setLineDash([3, 10]); c.lineCap = 'round'; c.strokeStyle = '#c98fb5'; c.lineWidth = 3;
     rrPath(c, 20, 20, W - 40, H - 40, 18); c.stroke(); c.setLineDash([]); c.lineCap = 'butt';
     const b = badgeOf(st);
     if (!b) {

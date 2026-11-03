@@ -9,12 +9,13 @@ const WOOD = '#f1f2f4', WOOD_D = '#e6e7ea', WOOD_DD = '#d3d5da', STEEL = '#d5d8d
 const SOFA = ['#e6e7ea', '#dfe0e4', '#e9eaed', '#d8d9de'];
 const BOOKS = ['#e25a4f', '#3d7be0', '#f2b632', '#3fae5a', '#9b6bff', '#ff8a4c', '#1fa3a3', '#ef5da8', '#f4ecdc'];
 const POT = ['#ffffff'];
+const BERRY = '#870b64';
 
 export function buildProps(env) {
   const { T, floor, accent, data, group, b, mats, tex } = env;
   const fnum = floor + 1;
   const accD = shade(accent, -0.28);
-  const sofaCol = SOFA[floor];
+  const sofaCol = floor % 2 === 0 ? mix(BERRY, '#ffffff', 0.78) : SOFA[floor];
   const slotById = new Map(data.slots.filter((s) => s.floor === floor).map((s) => [s.id, s]));
 
   const planeCache = new Map();
@@ -58,7 +59,7 @@ export function buildProps(env) {
     b.geo(g, color, b._lm(x, y, z, ry), false);
     g.dispose();
   };
-  const ottoman = (x, z, ry = 0, col = '#17181c') => rbox(1.0, 0.55, 1.0, 0.2, col, x, 0.3, z, ry);
+  const ottoman = (x, z, ry = 0, col = mix(BERRY, '#ffffff', 0.12)) => rbox(1.0, 0.55, 1.0, 0.2, col, x, 0.3, z, ry);
 
   /* ------------------------------ small parts ------------------------------ */
   const mug = (x, y, z, col = '#ffffff') => {
@@ -146,8 +147,8 @@ export function buildProps(env) {
         rbox(w, 0.95, 0.42, 0.16, shade(sofaCol, -0.04), 0, 0.85, -d / 2 + 0.21);
         rbox(0.34, 0.8, d, 0.14, shade(sofaCol, -0.06), -(w / 2 - 0.17), 0.7, 0);
         rbox(0.34, 0.8, d, 0.14, shade(sofaCol, -0.06), w / 2 - 0.17, 0.7, 0);
-        rbox(0.5, 0.42, 0.16, 0.08, '#f4f5f7', -w / 2 + 0.85, 1.0, -d / 2 + 0.55, 0.3);
-        rbox(0.46, 0.4, 0.16, 0.08, '#17181c', w / 2 - 0.85, 1.0, -d / 2 + 0.55, -0.25);
+        rbox(0.5, 0.42, 0.16, 0.08, mix(BERRY, '#ffffff', 0.55), -w / 2 + 0.85, 1.0, -d / 2 + 0.55, 0.3);
+        rbox(0.46, 0.4, 0.16, 0.08, BERRY, w / 2 - 0.85, 1.0, -d / 2 + 0.55, -0.25);
       });
     },
 
@@ -175,17 +176,17 @@ export function buildProps(env) {
     },
 
     rug(it) {
-      const col = mix(it.color || '#d9cdf3', '#ffffff', 0.84);
+      const col = mix(BERRY, '#ffffff', 0.8);
       if (it.shape === 'round') {
         b.cyl(it.r, it.r, 0.04, col, it.x, 0, it.z, 48);
         b.cyl(it.r * 0.86, it.r * 0.86, 0.05, shade(col, 0.35), it.x, 0, it.z, 48);
-        b.cyl(it.r * 0.6, it.r * 0.6, 0.06, mix(col, accent, 0.5), it.x, 0, it.z, 48);
+        b.cyl(it.r * 0.6, it.r * 0.6, 0.06, mix(BERRY, '#ffffff', 0.45), it.x, 0, it.z, 48);
         b.cyl(it.r * 0.34, it.r * 0.34, 0.07, shade(col, 0.45), it.x, 0, it.z, 48);
       } else {
         b.at(it.x, 0, it.z, it.rot, () => {
           b.box(it.w, 0.04, it.d, col, 0, 0.02, 0);
           b.box(it.w - 0.5, 0.05, it.d - 0.5, shade(col, 0.4), 0, 0.025, 0);
-          b.box(it.w - 1.0, 0.06, it.d - 1.0, mix(col, accent, 0.35), 0, 0.03, 0, 0, false);
+          b.box(it.w - 1.0, 0.06, it.d - 1.0, mix(BERRY, '#ffffff', 0.5), 0, 0.03, 0, 0, false);
         });
       }
     },
@@ -289,7 +290,7 @@ export function buildProps(env) {
       b.at(it.x, 0, it.z, it.rot, () => {
         b.box(w, h - 0.1, d, '#ffffff', 0, (h - 0.1) / 2, 0);
         b.box(w + 0.3, 0.1, d + 0.22, '#ffffff', 0, h - 0.05, 0.05);
-        b.box(w - 0.5, 0.62, 0.04, accD, 0, 0.55, d / 2 + 0.02);
+        b.box(w - 0.5, 0.62, 0.04, BERRY, 0, 0.55, d / 2 + 0.02);
         b.cyl(0.3, 0.3, 0.05, '#ffffff', 0, 0.3, d / 2 + 0.06, 24, true, 0, Math.PI / 2);
         b.cyl(0.18, 0.18, 0.06, accent, 0, 0.3, d / 2 + 0.07, 24, false, 0, Math.PI / 2);
         b.cyl(0.14, 0.16, 0.06, '#d8b04a', 1.3, h, 0.35, 12);     // service bell
@@ -317,7 +318,7 @@ export function buildProps(env) {
         }
         b.box(w - 0.3, 0.5, 0.08, '#ffffff', 0, h + 0.62, 0.05);
         b.box(w + 0.7, 0.2, 0.9, '#cfd1d6', 0, 0.1, 0.6, 0, false);   // doormat step
-        b.box(1.6, 0.04, 1.0, mix(accent, '#cfd1d6', 0.4), 0, 0.2, 0.9, 0, true);
+        b.box(1.6, 0.04, 1.0, mix(BERRY, '#cfd1d6', 0.5), 0, 0.2, 0.9, 0, true);
       });
       const g = frameGroup(it);
       const [c] = [document.createElement('canvas')];
@@ -387,7 +388,7 @@ export function buildProps(env) {
     g.position.set(it.x, 0, it.z); g.userData.noPick = true;
     group.add(g);
     const pb = new env.Batch(T);
-    pb.cyl(0.45 * sc, 0.35 * sc, 0.7 * sc, '#ffffff', 0, 0, 0, 20, false);
+    pb.cyl(0.45 * sc, 0.35 * sc, 0.7 * sc, (hash(it.id) % 2 ? mix(BERRY, '#ffffff', 0.12) : '#ffffff'), 0, 0, 0, 20, false);
     pb.cyl(0.4 * sc, 0.4 * sc, 0.03, '#e3e4e8', 0, 0.68 * sc, 0, 20, false);
     pb.sphere(0.62 * sc, '#8fd18b', 0, 1.25 * sc, 0, 1, 1, 1, 3);
     pb.sphere(0.5 * sc, '#76c27a', 0.12 * sc, 1.85 * sc, 0.05 * sc, 1, 1, 1, 3);
