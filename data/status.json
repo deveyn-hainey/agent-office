@@ -1,5 +1,5 @@
 {
-  "updated": "2026-11-04T21:34:14Z",
+  "updated": "2026-11-04T22:02:20Z",
   "agents": {
     "info": {
       "state": "finished",
@@ -27,9 +27,9 @@
       "updated": "2026-11-02T22:48:58Z"
     },
     "jo": {
-      "state": "working",
+      "state": "finished",
       "task": "Committed SOMA body meshes to video-test and shared screenshots; Rondo usability phase awaiting review",
-      "updated": "2026-11-04T21:34:14Z"
+      "updated": "2026-11-04T22:02:20Z"
     },
     "po": {
       "state": "idle",
