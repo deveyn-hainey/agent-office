@@ -1,5 +1,15 @@
 [
   {
+    "time": "2026-11-04T20:34:15Z",
+    "agent": "jo",
+    "text": "Resumed Claude on the Rondo usability phase after the usage pause"
+  },
+  {
+    "time": "2026-11-04T20:34:15Z",
+    "agent": "claude",
+    "text": "Finished SOMA-X body meshes for fitted players (uncommitted, for review); resumed Rondo usability phase"
+  },
+  {
     "time": "2026-11-03T22:39:50Z",
     "agent": "claude",
     "text": "Claude finished Rondo phase 6a and started the usability phase; began real SOMA body meshes in video-test"
