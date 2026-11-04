@@ -1,5 +1,15 @@
 [
   {
+    "time": "2026-11-04T21:34:14Z",
+    "agent": "jo",
+    "text": "Committed the SOMA-X body mesh work to video-test and shared new screenshots"
+  },
+  {
+    "time": "2026-11-04T21:34:14Z",
+    "agent": "claude",
+    "text": "Finished the Rondo usability phase (all checks pass, left uncommitted for review) and the video-test skeleton toggle"
+  },
+  {
     "time": "2026-11-04T20:34:15Z",
     "agent": "jo",
     "text": "Resumed Claude on the Rondo usability phase after the usage pause"

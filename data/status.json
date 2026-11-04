@@ -1,5 +1,5 @@
 {
-  "updated": "2026-11-04T20:34:15Z",
+  "updated": "2026-11-04T21:34:14Z",
   "agents": {
     "info": {
       "state": "finished",
@@ -28,8 +28,8 @@
     },
     "jo": {
       "state": "working",
-      "task": "Restarted Claude on Rondo usability phase today; SOMA body-mesh work done, awaiting your review",
-      "updated": "2026-11-04T20:34:15Z"
+      "task": "Committed SOMA body meshes to video-test and shared screenshots; Rondo usability phase awaiting review",
+      "updated": "2026-11-04T21:34:14Z"
     },
     "po": {
       "state": "idle",
@@ -37,9 +37,9 @@
       "updated": "2026-11-02T22:48:58Z"
     },
     "claude": {
-      "state": "working",
-      "task": "Doing Rondo usability phase (resumed today); SOMA body meshes built, left uncommitted for review",
-      "updated": "2026-11-04T20:34:15Z"
+      "state": "finished",
+      "task": "Finished Rondo usability phase (uncommitted, for review); SOMA mesh and skeleton toggle done in video-test",
+      "updated": "2026-11-04T21:34:14Z"
     },
     "boo": {
       "state": "finished",
