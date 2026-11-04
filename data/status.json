@@ -1,5 +1,5 @@
 {
-  "updated": "2026-11-04T22:02:20Z",
+  "updated": "2026-11-04T22:39:10Z",
   "agents": {
     "info": {
       "state": "finished",
@@ -37,9 +37,9 @@
       "updated": "2026-11-02T22:48:58Z"
     },
     "claude": {
-      "state": "finished",
-      "task": "Finished Rondo usability phase (uncommitted, for review); SOMA mesh and skeleton toggle done in video-test",
-      "updated": "2026-11-04T21:34:14Z"
+      "state": "working",
+      "task": "Running Claude-design redesign phase 1 for Rondo (tokens, app shell, Library screen)",
+      "updated": "2026-11-04T22:39:10Z"
     },
     "boo": {
       "state": "finished",
