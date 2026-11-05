@@ -1,0 +1,32 @@
+/* Base reset + stage + shared tokens. Owned by S0; UI styling lives in css/ui.css (S4). */
+:root {
+  --cream: #ffffff;
+  --panel: rgba(255, 255, 255, 0.96);
+  --border: #eceef1;
+  --ink: #111114;
+  --muted: #8b9099;
+  --working: #3dba5f; --waiting: #f5a431; --error: #ef4f4f; --resting: #a7acb4; --finished: #3b82f6;
+  --f4: #e9e4f7; --f3: #e0f1e4; --f2: #e0ebf8; --f1: #f8e4ea;
+  --serif: Inter, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --sans: Inter, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; overflow: hidden; background: #fff; color: var(--ink); font: 13px/1.4 var(--sans); -webkit-font-smoothing: antialiased; }
+#app { position: fixed; inset: 0; }
+#stage { position: absolute; inset: 0; }
+#stage canvas.gl { display: block; cursor: grab; }
+#stage canvas.gl.dragging { cursor: grabbing; }
+#ui-root { position: absolute; inset: 0; pointer-events: none; }
+#ui-root > * { pointer-events: auto; }
+.card { background: var(--panel); border: 1px solid rgba(0,0,0,.04); border-radius: 14px; }
+[hidden] { display: none !important; }
+body.clean #ui-root .ui-region:not(#bottom-nav) { display: none !important; }
+#fallback { position: absolute; inset: 0; display: grid; place-items: center; z-index: 50; }
+#fallback .card { padding: 24px 28px; max-width: 420px; }
+#fallback h2 { margin: 0 0 6px; font-family: var(--serif); }
+
+/* CSS2D labels (speech bubbles etc.) — S2/S1 may extend */
+.bubble { background: #fff; border: 1.5px solid var(--ink); border-radius: 10px; padding: 3px 8px; font-size: 12px; max-width: 220px; white-space: normal; transform: translateY(-14px); pointer-events: none; }
+.bubble[data-style="alert"] { background: var(--waiting); font-weight: 700; }
+@media (prefers-reduced-motion: reduce) { * { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; } }

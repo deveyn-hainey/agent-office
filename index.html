@@ -2,10 +2,12 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Office Bot</title>
-<meta name="description" content="Live 3D office view of Deveyn Hainey's AI agents.">
-<link rel="stylesheet" href="css/style.css">
+<meta name="description" content="A multi-floor isometric office where an AI agent team lives and works (scripted replay).">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' rx='4' fill='%23111111'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="css/base.css">
+<link rel="stylesheet" href="css/ui.css">
 <script type="importmap">
 {
   "imports": {
@@ -17,54 +19,40 @@
 </head>
 <body>
 <div id="app">
+  <!-- 3D stage: core/scene.js appends the WebGL canvas and the CSS2D label layer here -->
   <div id="stage"></div>
+
   <div id="fallback" hidden>
-    <div class="card">
-      <h2>3D view unavailable</h2>
-      <p>The 3D office couldn't start (WebGL or the three.js CDN is unavailable). The status panels still work.</p>
+    <div class="card"><h2>3D view unavailable</h2><p>The 3D office couldn't start (WebGL or the three.js CDN is unavailable).</p></div>
+  </div>
+
+  <!-- UI regions (S4 owns the contents; ids are a stable contract) -->
+  <div id="ui-root">
+    <div id="brand-card" class="card ui-region"></div>
+    <header id="top-pill" class="card ui-region" aria-label="Office status"></header>
+    <div id="needs-card" class="card ui-region" hidden></div>
+    <div id="replay-controls" class="card ui-region" aria-label="Scenario replay controls"></div>
+    <div id="drawer-toggles" class="ui-region"></div>
+    <div id="left-col" class="ui-col">
+      <aside id="left-panel" class="ui-region"></aside>
     </div>
-  </div>
-
-  <div id="topleft">
-    <div class="card brand">
-      <div class="logo"></div>
-      <div class="brand-text">
-        <b>Office Bot</b>
-        <span class="live" id="live"><i></i><em id="liveLabel">Live</em> · <span id="updated">--:--</span></span>
-      </div>
-      <div class="stale" id="stale" hidden></div>
+    <section id="activity-log" class="card ui-region"></section>
+    <div id="slack-col" class="ui-col">
+      <section id="slack-pane" class="card ui-region" aria-label="Scenario replay chat (read-only)"></section>
     </div>
-    <button class="card tour" id="tour" aria-pressed="false"><span id="tourIcon">▶</span> Tour</button>
+    <div id="right-col" class="ui-col">
+      <aside id="right-panel" class="ui-region"></aside>
+      <div id="desk-view" class="ui-region" hidden></div>
+    </div>
+    <div id="zoom-box" class="card ui-region"></div>
+    <form id="command-box" class="card ui-region" autocomplete="off"></form>
+    <nav id="bottom-nav" class="card ui-region" aria-label="Camera"></nav>
+    <div id="controls-hint" class="card ui-region">Drag <i>rotate</i> · Right-drag <i>WASD move</i> · Scroll <i>zoom</i> · ↑↓ <i>floors</i></div>
+    <div id="binder-modal" class="ui-overlay" hidden></div>
+    <div id="project-map" class="ui-overlay" hidden></div>
+    <div id="summary-card" class="ui-overlay" hidden></div>
+    <div id="toast" aria-live="polite"></div>
   </div>
-
-  <div id="topcenter">
-    <div class="card counts" id="counts"></div>
-    <div class="card toast" id="toast" hidden></div>
-  </div>
-
-  <aside id="left" class="panel">
-    <section class="card floors"><div class="fhead"><span>Floors</span><span id="floorCount">0</span></div><div id="floorList"></div></section>
-    <section class="card coll open" id="cWait"><button class="chead"><span>Waiting on me</span><span class="badge" id="waitBadge">0</span><svg viewBox="0 0 10 6"><path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.5"/></svg></button><div class="cbody" id="waitBody"></div></section>
-    <section class="card coll" id="cFin"><button class="chead"><span>Finished</span><span class="badge" id="finBadge">0</span><svg viewBox="0 0 10 6"><path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.5"/></svg></button><div class="cbody" id="finBody"></div></section>
-    <section class="card coll" id="cRou" hidden><button class="chead"><span>Routines</span><span class="badge" id="rouBadge">0</span><svg viewBox="0 0 10 6"><path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.5"/></svg></button><div class="cbody" id="rouBody"></div></section>
-  </aside>
-
-  <aside id="right" class="panel">
-    <section class="card floorcard">
-      <div class="banner"><div><div class="bname" id="bName">-</div><div class="bbig"><b id="bWorking">0</b> working</div></div><div class="bsub" id="bSub"></div></div>
-      <div id="agentList"></div>
-    </section>
-  </aside>
-
-  <section class="card" id="activity"><h3>Activity</h3><div id="actList"></div></section>
-  <section class="card" id="usage" hidden></section>
-
-  <div id="hint"><span><kbd>Drag</kbd> rotate</span><span><kbd>Right-drag</kbd> <kbd>WASD</kbd> move</span><span><kbd>Scroll</kbd> zoom</span><span id="hintFloors"><kbd>↑</kbd><kbd>↓</kbd> floors</span></div>
-  <div id="zoom"><button class="card" id="zin" aria-label="Zoom in">+</button><button class="card" id="zout" aria-label="Zoom out">−</button></div>
-  <nav id="mnav"><button class="card" id="navLeft" data-d="left">Floors</button><button class="card" data-d="right">Agents</button><button class="card" data-d="activity">Activity</button></nav>
-
-  <div id="detailBack" hidden></div>
-  <div class="card" id="detail" hidden></div>
 </div>
 
 <script>
